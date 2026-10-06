@@ -162,7 +162,7 @@ const PROMO = `<!doctype html><html><head><meta charset="utf-8"><style>
   .wrap{position:relative;padding:36px 34px;box-sizing:border-box}
   .brand{display:flex;align-items:center;gap:13px}
   .logo{width:52px;height:52px;border-radius:13px;box-shadow:0 6px 20px rgba(56,132,255,.45);
-    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%235fa2ff'/><stop offset='52%25' stop-color='%233374ff'/><stop offset='100%25' stop-color='%231d4fd8'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><rect x='14' y='20' width='72' height='56' rx='18' fill='%23fff'/><rect x='28' y='34' width='38' height='14' rx='7' fill='%233374ff'/><rect x='28' y='54' width='24' height='14' rx='7' fill='%233374ff'/></svg>") center/cover}
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%236aa9ff'/><stop offset='100%25' stop-color='%232f6ae8'/></linearGradient></defs><rect width='100' height='100' rx='23' fill='url(%23g)'/><rect x='21' y='27' width='58' height='46' rx='14' fill='%23fff'/><rect x='33' y='41' width='30' height='9' rx='4.5' fill='%232f6ae8'/><rect x='33' y='56' width='19' height='9' rx='4.5' fill='%232f6ae8' fill-opacity='.55'/></svg>") center/cover}
   .name{font-size:33px;font-weight:700;letter-spacing:3px}
   .tag{margin-top:19px;font-size:17px;line-height:1.55;color:#b9c4d4}
   .tag b{color:#fff}

@@ -21,20 +21,14 @@ function iconSvg(size) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#5fa2ff"/>
-      <stop offset="52%" stop-color="#3374ff"/>
-      <stop offset="100%" stop-color="#1d4fd8"/>
-    </linearGradient>
-    <linearGradient id="hi" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity=".28"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#6aa9ff"/>
+      <stop offset="100%" stop-color="#2f6ae8"/>
     </linearGradient>
   </defs>
-  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
-  <rect width="100" height="46" rx="22" fill="url(#hi)"/>
-  <rect x="14" y="20" width="72" height="56" rx="18" fill="#ffffff"/>
-  <rect x="28" y="34" width="38" height="14" rx="7" fill="#3374ff"/>
-  <rect x="28" y="54" width="24" height="14" rx="7" fill="#3374ff"/>
+  <rect width="100" height="100" rx="23" fill="url(#bg)"/>
+  <rect x="21" y="27" width="58" height="46" rx="14" fill="#ffffff"/>
+  <rect x="33" y="41" width="30" height="9" rx="4.5" fill="#2f6ae8"/>
+  <rect x="33" y="56" width="19" height="9" rx="4.5" fill="#2f6ae8" fill-opacity=".55"/>
 </svg>`;
 }
 
