@@ -164,17 +164,21 @@ _locales/       语言包（zh_CN / en）
 - **PDF 分段只依据几何信息**（行距、缩进、字号），不看标点——段内换行以句号结尾在真实 PDF 里很常见。
 - **视频字幕隐藏原生轨道改由扩展渲染**，这样原文和译文才能一起排版。
 
-## 贡献
+## 开发约定
 
-欢迎 issue 和 PR。提交前请确保 `npm test` 全绿；改了用户可见文案请同步 `_locales/zh_CN` 与 `_locales/en`（`i18n.test.mjs` 会检查两边 key 是否对齐、有没有漏翻或死文案）。
+改完请确保 `npm test` 全绿。几条容易被忽略的约定：
+
+- 改了用户可见文案，要同步 `_locales/zh_CN` 与 `_locales/en` —— `i18n.test.mjs` 会检查两边 key 是否对齐、有没有漏翻或死文案
+- 新增服务类型只需在 `PROVIDER_TYPES` 与 `TEMPLATE_PRESETS` 里加一项并补文案，`providers.test.mjs` 会自动校验新预设渲染出的请求体是合法 JSON、地址里没有未替换的占位符
+- 提交前别把 `keys/`（签名私钥）和 `dist/` 带进版本库，`.gitignore` 已经排除
 
 新增服务类型的完整流程：在 `PROVIDER_TYPES` 与 `TEMPLATE_PRESETS` 里加一项，补上对应的文案 key，`providers.test.mjs` 会自动校验新预设渲染出的请求体是合法 JSON、地址里没有未替换的占位符。
 
-## 许可证
+## 授权
 
-[MIT](LICENSE)。
+本仓库为私有项目，**保留所有权利，未授权分发或再使用**。
 
-打包进来的 [pdf.js](src/vendor/pdfjs/) 来自 Mozilla，许可证为 Apache-2.0，详见 `src/vendor/pdfjs/LICENSE`。
+打包进来的 [pdf.js](src/vendor/pdfjs/) 来自 Mozilla，许可证为 Apache-2.0，详见 `src/vendor/pdfjs/LICENSE`（该许可证要求保留，与项目本身的授权无关）。
 
 ---
 

@@ -1,7 +1,7 @@
 {
   "name": "qiyi-translate",
   "version": "1.8.0",
-  "private": false,
+  "private": true,
   "description": "栖译 — Chrome 双语对照网页翻译扩展（开发/测试用，扩展本身无需构建）。可接入任意大模型：OpenAI 兼容、Claude、Gemini、Ollama、自定义 HTTP 接口。",
   "type": "module",
   "scripts": {
@@ -14,18 +14,6 @@
     "jsdom": "^24.0.0",
     "ws": "^8.16.0"
   },
-  "license": "MIT",
-  "author": "<YOUR NAME>",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/<YOUR NAME>/qiyi-translate.git"
-  },
-  "keywords": [
-    "chrome-extension",
-    "translation",
-    "bilingual",
-    "llm",
-    "openai",
-    "immersive"
-  ]
+  "license": "UNLICENSED",
+  "author": "徐超"
 }
