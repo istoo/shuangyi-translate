@@ -53,7 +53,7 @@ console.log('=== 英文界面渲染 ===');
 check('界面没有漏翻的 key', !KEY_LIKE.test(bodyText),
   [...new Set(bodyText.match(KEY_LIKE) || [])].join(', '));
 
-check('标题是英文', $('saved') && bodyText.includes('Qiyi · Settings'), bodyText.slice(0, 40).replace(/\n/g, ' '));
+check('标题是英文', $('saved') && bodyText.includes('Shuangyi · Settings'), bodyText.slice(0, 40).replace(/\n/g, ' '));
 check('区块标题是英文', bodyText.includes('Translation services') && bodyText.includes('Shortcuts'),
   bodyText.slice(0, 80).replace(/\n/g, ' | '));
 

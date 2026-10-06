@@ -1,9 +1,9 @@
 {
   "extName": {
-    "message": "Qiyi — Bilingual Web Translation"
+    "message": "Shuangyi — Bilingual Web Translation"
   },
   "extDesc": {
-    "message": "Bilingual web translation: full-page, hover, select-to-translate and input-box translation. Save multiple model profiles and switch anytime — OpenAI-compatible, Anthropic Claude, Google Gemini, Ollama, or any custom HTTP endpoint."
+    "message": "Bilingual web translation with your own model. Full page, hover, selection and input box; works with any OpenAI-compatible API."
   },
   "typeGoogle": {
     "message": "Google Translate (free, no setup)"
@@ -51,7 +51,7 @@
     "message": "The full request URL. Headers, body and response path can be customised under Advanced"
   },
   "appTitle": {
-    "message": "Qiyi · Settings"
+    "message": "Shuangyi · Settings"
   },
   "commonSaved": {
     "message": "Saved"
@@ -381,7 +381,7 @@
     "message": "Translate a PDF file"
   },
   "pdfTitle": {
-    "message": "Qiyi · PDF translation"
+    "message": "Shuangyi · PDF translation"
   },
   "pdfDropHint": {
     "message": "Drop a PDF here, or"
@@ -432,7 +432,7 @@
     "message": "Couldn't read the settings"
   },
   "welTitle": {
-    "message": "Qiyi is ready"
+    "message": "Shuangyi is ready"
   },
   "welLead": {
     "message": "Turn any page into a bilingual read — with the model you choose."
@@ -489,7 +489,7 @@
     "message": "About your data"
   },
   "welPrivacyNote": {
-    "message": "Settings and the translation cache stay on this computer. When translating, page text goes straight to the endpoint you configured — Qiyi has no server and collects nothing."
+    "message": "Settings and the translation cache stay on this computer. When translating, page text goes straight to the endpoint you configured — Shuangyi has no server and collects nothing."
   },
   "welFooter": {
     "message": "You can always come back via the extension icon → gear"

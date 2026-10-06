@@ -7,7 +7,7 @@ import { connect, sleep } from './cdp.mjs';
 
 const PORT = process.argv[2] || '9353';
 const EXT = new URL('../../', import.meta.url).pathname;
-const DOWNLOADS = '/tmp/qiyi-export-test';
+const DOWNLOADS = '/tmp/shuangyi-export-test';
 
 rmSync(DOWNLOADS, { recursive: true, force: true });
 mkdirSync(DOWNLOADS, { recursive: true });

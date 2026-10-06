@@ -8,7 +8,7 @@ import { connect, sleep } from './cdp.mjs';
 
 const PORT = process.argv[2] || '9355';
 const EXT = new URL('../../', import.meta.url).pathname;
-const TMP = '/tmp/qiyi-pdf-test';
+const TMP = '/tmp/shuangyi-pdf-test';
 
 rmSync(TMP, { recursive: true, force: true });
 mkdirSync(TMP, { recursive: true });

@@ -161,9 +161,8 @@ const PROMO = `<!doctype html><html><head><meta charset="utf-8"><style>
     background:radial-gradient(circle,rgba(56,132,255,.40),transparent 70%)}
   .wrap{position:relative;padding:36px 34px;box-sizing:border-box}
   .brand{display:flex;align-items:center;gap:13px}
-  .logo{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;
-    background:linear-gradient(148deg,#5fa2ff 0%,#3374ff 52%,#1d4fd8 100%);
-    font-size:24px;font-weight:700;box-shadow:0 6px 20px rgba(56,132,255,.45)}
+  .logo{width:52px;height:52px;border-radius:13px;box-shadow:0 6px 20px rgba(56,132,255,.45);
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%235fa2ff'/><stop offset='52%25' stop-color='%233374ff'/><stop offset='100%25' stop-color='%231d4fd8'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><rect x='14' y='20' width='72' height='56' rx='18' fill='%23fff'/><rect x='28' y='34' width='38' height='14' rx='7' fill='%233374ff'/><rect x='28' y='54' width='24' height='14' rx='7' fill='%233374ff'/></svg>") center/cover}
   .name{font-size:33px;font-weight:700;letter-spacing:3px}
   .tag{margin-top:19px;font-size:17px;line-height:1.55;color:#b9c4d4}
   .tag b{color:#fff}
@@ -171,7 +170,7 @@ const PROMO = `<!doctype html><html><head><meta charset="utf-8"><style>
 </style></head><body>
   <div class="glow"></div>
   <div class="wrap">
-    <div class="brand"><div class="logo">双</div><div class="name">栖译</div></div>
+    <div class="brand"><div class="logo"></div><div class="name">双译</div></div>
     <div class="tag">让网页变成<b>双语对照</b><br>翻译模型由<b>你自己选</b></div>
     <div class="sub">OpenAI 兼容 · Claude · Gemini · Ollama · 自定义接口</div>
   </div>

@@ -73,7 +73,7 @@ for (const t of (await listing()).filter((x) => x.type === 'service_worker' && x
   if (!client) continue;
   await Promise.race([client.send('Runtime.enable').catch(() => null), sleep(2000)]);
   const name = await Promise.race([client.evalJs('chrome.runtime.getManifest().name').catch(() => ({})), sleep(2000).then(() => ({}))]);
-  if (/栖译|翻译/.test(name.value || '')) {
+  if (/双译|翻译/.test(name.value || '')) {
     swTarget = t;
     sw = client;
     extId = extId || t.url.split('/')[2];

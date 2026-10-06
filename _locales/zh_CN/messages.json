@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "栖译 — 双语对照网页翻译"
+    "message": "双译 — 双语对照网页翻译"
   },
   "extDesc": {
     "message": "双语对照网页翻译：整页翻译、鼠标悬停翻译、划词翻译、输入框翻译。可保存多套模型配置随时切换，支持 OpenAI 兼容接口、Anthropic Claude、Google Gemini、Ollama 本地模型，以及任意自定义 HTTP 接口。"
@@ -51,7 +51,7 @@
     "message": "完整的请求 URL，可在高级设置里自定义请求头、请求体与结果取值路径"
   },
   "appTitle": {
-    "message": "栖译 · 设置"
+    "message": "双译 · 设置"
   },
   "commonSaved": {
     "message": "已保存"
@@ -381,7 +381,7 @@
     "message": "翻译 PDF 文件"
   },
   "pdfTitle": {
-    "message": "栖译 · PDF 翻译"
+    "message": "双译 · PDF 翻译"
   },
   "pdfDropHint": {
     "message": "把 PDF 文件拖到这里，或者"
@@ -432,7 +432,7 @@
     "message": "读取配置失败"
   },
   "welTitle": {
-    "message": "栖译已装好"
+    "message": "双译已装好"
   },
   "welLead": {
     "message": "让网页变成双语对照，翻译模型由你自己选。"
@@ -489,7 +489,7 @@
     "message": "关于你的数据"
   },
   "welPrivacyNote": {
-    "message": "设置和译文缓存只保存在这台电脑上。翻译时，页面文本会直接发送到你自己配置的那个接口，栖译没有中转服务器，不收集、不上传任何数据。"
+    "message": "设置和译文缓存只保存在这台电脑上。翻译时，页面文本会直接发送到你自己配置的那个接口，双译没有中转服务器，不收集、不上传任何数据。"
   },
   "welFooter": {
     "message": "随时可以在扩展图标 → 齿轮里回来调整设置"

@@ -1,12 +1,12 @@
-/* 栖译 —— 内容脚本
+/* 双译 —— 内容脚本
  * 职责：把页面切成"段落单元"，按需翻译，把译文以双语对照方式注入原文之后。
  * 内容脚本非 module，全部逻辑收在一个 IIFE 内。
  * 注：类名与属性上的 `irt-` 前缀是早期版本的遗留标识，与页面上的用户数据
  * 存在兼容关系，不做重命名。
  */
 (() => {
-  if (window.__qiyiTranslate) return;
-  window.__qiyiTranslate = true;
+  if (window.__shuangyiTranslate) return;
+  window.__shuangyiTranslate = true;
 
   // ---------- 常量 ----------
   const MARK = 'irt-translation';           // 译文节点标记类

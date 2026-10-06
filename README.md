@@ -1,9 +1,9 @@
-# 栖译 · Qiyi
+# 双译 · Shuangyi
 
 **双语对照网页翻译扩展 —— 翻译模型由你自己选。**
 
 A Chrome extension that turns any web page, video or PDF into a bilingual read. Unlike
-translation extensions tied to one vendor, Qiyi lets you bring your own model: save several
+translation extensions tied to one vendor, Shuangyi lets you bring your own model: save several
 profiles (OpenAI-compatible, Anthropic, Gemini, Ollama, or any custom HTTP endpoint) and
 switch between them at will.
 
@@ -15,7 +15,7 @@ switch between them at will.
 
 现有翻译扩展要么绑死某一家服务，要么把配置写死成一坨——换模型要把 Key、模型名、提示词、术语库全部重填一遍。
 
-栖译把翻译服务做成**可保存的档案**：每套配置（地址、Key、模型、提示词、术语库、专家身份）都是一份独立档案，下拉切换。想接一个别人没支持过的接口？在「高级设置」里自己填请求地址、请求头、请求体模板和结果取值路径。
+双译把翻译服务做成**可保存的档案**：每套配置（地址、Key、模型、提示词、术语库、专家身份）都是一份独立档案，下拉切换。想接一个别人没支持过的接口？在「高级设置」里自己填请求地址、请求头、请求体模板和结果取值路径。
 
 另外它不只是一层翻译壳：
 
@@ -59,7 +59,7 @@ Chrome 从 137 起移除了 `--load-extension`，未打包扩展只能走开发�
 ### 打包
 
 ```bash
-npm run pack     # 产出 dist/qiyi-translate-<版本>.zip（提交商店）与 .crx（本地分发）
+npm run pack     # 产出 dist/shuangyi-translate-<版本>.zip（提交商店）与 .crx（本地分发）
 ```
 
 ## 配置模型
@@ -124,7 +124,7 @@ npm test        # 离线测试，不需要浏览器
 
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --remote-debugging-port=9360 --user-data-dir=/tmp/qiyi-dev about:blank &
+  --remote-debugging-port=9360 --user-data-dir=/tmp/shuangyi-dev about:blank &
 ```
 
 | 脚本 | 验证内容 |
@@ -184,7 +184,7 @@ _locales/       语言包（zh_CN / en）
 
 ## English summary
 
-Qiyi is a Chrome extension for bilingual web reading. It works with **any** translation
+Shuangyi is a Chrome extension for bilingual web reading. It works with **any** translation
 backend you configure — OpenAI-compatible APIs, Anthropic, Gemini, Ollama, DeepL, or a
 custom HTTP endpoint — and stores each backend as a switchable profile.
 

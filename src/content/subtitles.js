@@ -1,4 +1,4 @@
-/* 栖译 —— 视频字幕翻译
+/* 双译 —— 视频字幕翻译
  *
  * 两条路径拿字幕：
  *  1) 标准 textTrack（WebVTT）：任何用原生字幕轨的视频站。把轨切成 hidden 让浏览器
@@ -9,8 +9,8 @@
  * 边播边补。这样既不会在打开视频时打爆接口，也天然适配拖动进度条。
  */
 (() => {
-  if (window.__qiyiSubtitles) return;
-  window.__qiyiSubtitles = true;
+  if (window.__shuangyiSubtitles) return;
+  window.__shuangyiSubtitles = true;
 
   const t = (key, ...subs) => {
     let text = key;
