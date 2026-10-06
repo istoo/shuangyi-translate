@@ -1,0 +1,620 @@
+{
+  "extName": {
+    "message": "Qiyi — Bilingual Web Translation"
+  },
+  "extDesc": {
+    "message": "Bilingual web translation: full-page, hover, select-to-translate and input-box translation. Save multiple model profiles and switch anytime — OpenAI-compatible, Anthropic Claude, Google Gemini, Ollama, or any custom HTTP endpoint."
+  },
+  "typeGoogle": {
+    "message": "Google Translate (free, no setup)"
+  },
+  "typeDeepl": {
+    "message": "DeepL (API key required)"
+  },
+  "typeOpenai": {
+    "message": "OpenAI-compatible (DeepSeek / Moonshot / self-hosted…)"
+  },
+  "typeAnthropic": {
+    "message": "Anthropic Claude"
+  },
+  "typeGemini": {
+    "message": "Google Gemini"
+  },
+  "typeOllama": {
+    "message": "Ollama (local models)"
+  },
+  "typeCustom": {
+    "message": "Custom endpoint (any HTTP service)"
+  },
+  "urlLabelBase": {
+    "message": "Base URL"
+  },
+  "urlLabelEndpoint": {
+    "message": "Endpoint"
+  },
+  "urlLabelUrl": {
+    "message": "Request URL"
+  },
+  "urlHintBase": {
+    "message": "Up to the version part, e.g. https://api.deepseek.com/v1; local servers like http://localhost:1234/v1"
+  },
+  "urlHintAnthropic": {
+    "message": "Defaults to https://api.anthropic.com — usually nothing to change"
+  },
+  "urlHintGemini": {
+    "message": "Defaults to https://generativelanguage.googleapis.com — usually nothing to change"
+  },
+  "urlHintOllama": {
+    "message": "Defaults to http://localhost:11434; run ollama serve and pull a model first"
+  },
+  "urlHintCustom": {
+    "message": "The full request URL. Headers, body and response path can be customised under Advanced"
+  },
+  "appTitle": {
+    "message": "Qiyi · Settings"
+  },
+  "commonSaved": {
+    "message": "Saved"
+  },
+  "commonDelete": {
+    "message": "Delete"
+  },
+  "secBasic": {
+    "message": "Basics"
+  },
+  "targetLang": {
+    "message": "Target language"
+  },
+  "targetLangHint": {
+    "message": "Pages will be translated into this language"
+  },
+  "displayMode": {
+    "message": "Display mode"
+  },
+  "modeBilingual": {
+    "message": "Bilingual (original + translation)"
+  },
+  "modeTranslation": {
+    "message": "Translation only"
+  },
+  "displayStyle": {
+    "message": "Translation style"
+  },
+  "styleDashed": {
+    "message": "Dashed underline"
+  },
+  "styleUnderline": {
+    "message": "Solid underline"
+  },
+  "styleHighlight": {
+    "message": "Highlight"
+  },
+  "styleQuote": {
+    "message": "Left quote bar"
+  },
+  "styleNone": {
+    "message": "Plain"
+  },
+  "fontSize": {
+    "message": "Translation size"
+  },
+  "secInteraction": {
+    "message": "Interaction"
+  },
+  "autoTranslate": {
+    "message": "Translate pages automatically"
+  },
+  "autoTranslateNote": {
+    "message": "(pages already in the target language are skipped)"
+  },
+  "showFloatBall": {
+    "message": "Show the floating button"
+  },
+  "hoverTranslate": {
+    "message": "Translate a single paragraph on hover"
+  },
+  "hoverHotkey": {
+    "message": "Hover modifier key"
+  },
+  "hotkeyShift": {
+    "message": "Hold Shift + hover"
+  },
+  "hotkeyCtrl": {
+    "message": "Hold Ctrl + hover"
+  },
+  "hotkeyAlt": {
+    "message": "Hold Alt + hover"
+  },
+  "hotkeyNone": {
+    "message": "Hover only (no key)"
+  },
+  "selectionTranslate": {
+    "message": "Selection popup"
+  },
+  "inputTranslate": {
+    "message": "Input-box translation (press space 3 times to translate what you typed)"
+  },
+  "secService": {
+    "message": "Translation services"
+  },
+  "currentService": {
+    "message": "Currently using"
+  },
+  "btnNewService": {
+    "message": "+ New"
+  },
+  "serviceHint": {
+    "message": "Save several service profiles and switch between them freely. Local models (Ollama, LM Studio…) work without an API key."
+  },
+  "btnTestService": {
+    "message": "Test this service"
+  },
+  "providerName": {
+    "message": "Name"
+  },
+  "providerNameHint": {
+    "message": "Shown in the dropdown. Anything you like"
+  },
+  "providerType": {
+    "message": "Type"
+  },
+  "fieldApiKey": {
+    "message": "API key"
+  },
+  "fieldModel": {
+    "message": "Model"
+  },
+  "fieldModelHint": {
+    "message": "e.g. gpt-4o-mini, deepseek-chat, claude-sonnet-4-5, gemini-2.0-flash, qwen2.5:7b"
+  },
+  "fieldTemperature": {
+    "message": "Temperature"
+  },
+  "fieldTemperatureHint": {
+    "message": "0 is recommended for translation; lower is more stable"
+  },
+  "fieldPro": {
+    "message": "Use the DeepL Pro endpoint"
+  },
+  "fieldSystemPrompt": {
+    "message": "System prompt"
+  },
+  "fieldSystemPromptHint": {
+    "message": "{{target}} is replaced with the target language name. Leave empty to use the built-in prompt"
+  },
+  "promptSystem": {
+    "message": "You are a professional translation engine. Translate the user's text into {{target}}. Output only the translation — no explanations, no quotation marks. Keep HTML tags and placeholders unchanged."
+  },
+  "promptContextRule": {
+    "message": "\nThe input is a JSON array of consecutive paragraphs from one document. Reply with a JSON array of the same length, one translation per item. Use the surrounding context: keep terminology, grammatical person and tone consistent throughout, and resolve ambiguity (pronouns, polysemy, elliptical sentences) accordingly. Output nothing else."
+  },
+  "promptExpert": {
+    "message": "\nYou are an expert translator in the field of {0}; use that field's professional terminology."
+  },
+  "promptGlossary": {
+    "message": "\nYou must follow this glossary (the left side is always translated as the right side):\n{0}"
+  },
+  "promptTitle": {
+    "message": "\nThe document is titled \"{0}\". Use it only to understand the domain and context; do not translate it."
+  },
+  "promptContext": {
+    "message": "\nHere are the paragraphs surrounding the text to translate. Use them only as context; do not translate them:\n{0}"
+  },
+  "fieldExpert": {
+    "message": "Expert persona"
+  },
+  "fieldExpertPlaceholder": {
+    "message": "e.g. computer science / medicine / law"
+  },
+  "fieldExpertHint": {
+    "message": "Leave empty to disable"
+  },
+  "fieldGlossary": {
+    "message": "Glossary"
+  },
+  "fieldGlossaryHint": {
+    "message": "One entry per line as source=target. Matching terms are forced to the given translation"
+  },
+  "fieldGlossaryPlaceholder": {
+    "message": "neural network=神经网络\nprompt=提示词"
+  },
+  "advSummary": {
+    "message": "Advanced: change these when the response can't be parsed, or for a non-standard API"
+  },
+  "advMethod": {
+    "message": "HTTP method"
+  },
+  "advMethodHint": {
+    "message": "Usually POST; with GET no request body is sent"
+  },
+  "advUrlTemplate": {
+    "message": "URL template"
+  },
+  "advUrlTemplateHint": {
+    "message": "{{url}} is the address you entered above"
+  },
+  "advHeaders": {
+    "message": "Request headers"
+  },
+  "advHeadersHint": {
+    "message": "One per line as Key: Value"
+  },
+  "advBody": {
+    "message": "Request body template"
+  },
+  "advBodyHint": {
+    "message": "Placeholders are inserted as JSON values — no need to add quotes"
+  },
+  "advResponsePath": {
+    "message": "Response path"
+  },
+  "advResponsePathHint": {
+    "message": "e.g. choices[0].message.content; leave empty if the whole response is the translation"
+  },
+  "advVarsHint": {
+    "message": "Available in the request body: {{url}} {{apiKey}} {{model}} {{temperature}} {{target}} {{source}} {{system}} {{texts}} (JSON array string) {{textsJson}} (real array) {{text}} (plain text)"
+  },
+  "placeholderApiKey": {
+    "message": "sk-…"
+  },
+  "placeholderUrl": {
+    "message": "https://…"
+  },
+  "testRunning": {
+    "message": "Testing…"
+  },
+  "testSource": {
+    "message": "Source: "
+  },
+  "testResult": {
+    "message": "Result: "
+  },
+  "testFailed": {
+    "message": "Failed: "
+  },
+  "testUnknownError": {
+    "message": "Unknown error"
+  },
+  "secSites": {
+    "message": "Site rules"
+  },
+  "secSubtitle": {
+    "message": "Video subtitles"
+  },
+  "subtitleTranslate": {
+    "message": "Translate video subtitles"
+  },
+  "subtitleHint": {
+    "message": "Shows bilingual subtitles whenever the video already has them — it never turns subtitles on by itself. Works with standard WebVTT tracks and YouTube's own captions."
+  },
+  "subtitleMode": {
+    "message": "Subtitle display"
+  },
+  "subtitleModeBilingual": {
+    "message": "Original + translation"
+  },
+  "subtitleModeTranslation": {
+    "message": "Translation only"
+  },
+  "subtitleFontScale": {
+    "message": "Subtitle size"
+  },
+  "sitesHint": {
+    "message": "Right-click on a page, or use the popup, to set “always translate” or “never translate” for a site."
+  },
+  "siteAlways": {
+    "message": "Always translate"
+  },
+  "siteNever": {
+    "message": "Never translate"
+  },
+  "siteNone": {
+    "message": "No site rules yet"
+  },
+  "confirmDeleteProvider": {
+    "message": "Delete the service “{0}”?"
+  },
+  "needOneProvider": {
+    "message": "Keep at least one service"
+  },
+  "createdProvider": {
+    "message": "Created “{0}” — don't forget to fill in the API key"
+  },
+  "confirmReset": {
+    "message": "Reset everything to defaults? Your service profiles and site rules will be lost."
+  },
+  "resetDone": {
+    "message": "Reset to defaults"
+  },
+  "cacheCleared": {
+    "message": "Cache cleared"
+  },
+  "deleted": {
+    "message": "Deleted"
+  },
+  "secShortcuts": {
+    "message": "Shortcuts"
+  },
+  "shortcutPageHint": {
+    "message": "Chrome doesn't let extensions change their own shortcuts; this opens the browser's shortcut page."
+  },
+  "btnOpenShortcutPage": {
+    "message": "Change shortcuts"
+  },
+  "shortcutUnset": {
+    "message": "Not set"
+  },
+  "shortcutConflictHint": {
+    "message": "If a shortcut clashes with the browser or another extension, Chrome silently ignores it — pick another combination."
+  },
+  "secData": {
+    "message": "Data"
+  },
+  "btnClearCache": {
+    "message": "Clear translation cache"
+  },
+  "btnResetDefaults": {
+    "message": "Reset to defaults"
+  },
+  "cacheHint": {
+    "message": "The cache lives in memory only and is cleared when the browser restarts."
+  },
+  "popTranslatePage": {
+    "message": "Translate this page"
+  },
+  "popRestorePage": {
+    "message": "Show original"
+  },
+  "popRuleDefault": {
+    "message": "Default"
+  },
+  "popMoreSettings": {
+    "message": "More settings"
+  },
+  "popShortcutLine": {
+    "message": "Alt+A translate · Alt+W toggle view"
+  },
+  "popExport": {
+    "message": "Export bilingual text"
+  },
+  "popOpenPdf": {
+    "message": "Translate a PDF file"
+  },
+  "pdfTitle": {
+    "message": "Qiyi · PDF translation"
+  },
+  "pdfDropHint": {
+    "message": "Drop a PDF here, or"
+  },
+  "pdfPickFile": {
+    "message": "choose a file"
+  },
+  "pdfLimitHint": {
+    "message": "Text-layer PDFs only — scanned images contain no text to read."
+  },
+  "pdfParsing": {
+    "message": "Parsing…"
+  },
+  "pdfParsingPage": {
+    "message": "Parsing page {0} of {1}…"
+  },
+  "pdfParseFailed": {
+    "message": "Couldn't parse the file: {0}"
+  },
+  "pdfNoText": {
+    "message": "No extractable text in this PDF (it may be a scan)."
+  },
+  "pdfSummary": {
+    "message": "{0} paragraphs · {1} translated"
+  },
+  "pdfTranslateAll": {
+    "message": "Translate all"
+  },
+  "pdfOpenAnother": {
+    "message": "Open another PDF"
+  },
+  "pdfExport": {
+    "message": "Export Markdown"
+  },
+  "pdfTranslating": {
+    "message": "Translating…"
+  },
+  "exportEmpty": {
+    "message": "Nothing to export yet — translate the page first"
+  },
+  "popUnsupported": {
+    "message": "This page can't be translated (browser-internal or store page)"
+  },
+  "popNeedKey": {
+    "message": "This service needs an API key — add it in More settings"
+  },
+  "popConfigError": {
+    "message": "Couldn't read the settings"
+  },
+  "welTitle": {
+    "message": "Qiyi is ready"
+  },
+  "welLead": {
+    "message": "Turn any page into a bilingual read — with the model you choose."
+  },
+  "welStep1": {
+    "message": "Open any page in another language"
+  },
+  "welStep1Note": {
+    "message": "A floating button appears in the bottom-right corner"
+  },
+  "welStep2": {
+    "message": "Click it, or press Alt+A"
+  },
+  "welStep2Note": {
+    "message": "Translations are inserted under each original paragraph"
+  },
+  "welStep3": {
+    "message": "Switch to your own model"
+  },
+  "welStep3Note": {
+    "message": "Google Translate works out of the box; swap in any model whenever you like"
+  },
+  "welBtnOptions": {
+    "message": "Set up a model"
+  },
+  "welBtnClose": {
+    "message": "Got it"
+  },
+  "welMoreTitle": {
+    "message": "Three more ways to use it"
+  },
+  "welCardHover": {
+    "message": "Hover"
+  },
+  "welCardHoverNote": {
+    "message": "Hold <kbd>Shift</kbd> and rest the cursor on a paragraph to translate just that one."
+  },
+  "welCardSelection": {
+    "message": "Select"
+  },
+  "welCardSelectionNote": {
+    "message": "Select any text to get a popup with the translation, ready to copy."
+  },
+  "welCardInput": {
+    "message": "Input box"
+  },
+  "welCardInputNote": {
+    "message": "Press <kbd>space</kbd> 3 times in any input to translate what you are writing."
+  },
+  "welMoreHint": {
+    "message": "Toggles and shortcuts live in Settings. <kbd>Alt+W</kbd> switches between bilingual and translation-only."
+  },
+  "welPrivacyTitle": {
+    "message": "About your data"
+  },
+  "welPrivacyNote": {
+    "message": "Settings and the translation cache stay on this computer. When translating, page text goes straight to the endpoint you configured — Qiyi has no server and collects nothing."
+  },
+  "welFooter": {
+    "message": "You can always come back via the extension icon → gear"
+  },
+  "csRetryFailed": {
+    "message": "Translation failed — click to retry"
+  },
+  "csFailed": {
+    "message": "Translation failed: {0}"
+  },
+  "csInputFailed": {
+    "message": "Input translation failed: {0}"
+  },
+  "csNoParagraphs": {
+    "message": "No translatable paragraphs found on this page"
+  },
+  "csModeBilingual": {
+    "message": "Bilingual"
+  },
+  "csModeTranslation": {
+    "message": "Translation only"
+  },
+  "csCopied": {
+    "message": "Copied"
+  },
+  "csCopyOne": {
+    "message": "Copy this translation"
+  },
+  "csEdit": {
+    "message": "Edit translation"
+  },
+  "csRetranslate": {
+    "message": "Translate this paragraph again (with surrounding context)"
+  },
+  "csCopyFailed": {
+    "message": "Copy failed — the browser blocked clipboard access"
+  },
+  "csNoResult": {
+    "message": "(no translation)"
+  },
+  "csTranslating": {
+    "message": "Translating"
+  },
+  "csBallTitle": {
+    "message": "Translate / restore this page (Alt+A)"
+  },
+  "csBallFailedTitle": {
+    "message": "{0} paragraphs failed — click to retry the page"
+  },
+  "exportSource": {
+    "message": "Source: {0}"
+  },
+  "csBallText": {
+    "message": "T"
+  },
+  "csBubbleTitle": {
+    "message": "Translation"
+  },
+  "csCopy": {
+    "message": "Copy"
+  },
+  "csClose": {
+    "message": "Close"
+  },
+  "csNoResponse": {
+    "message": "No response"
+  },
+  "bgMenuTranslatePage": {
+    "message": "Translate / restore this page"
+  },
+  "bgMenuTranslateSelection": {
+    "message": "Translate selected text"
+  },
+  "bgMenuSiteAlways": {
+    "message": "Always translate this site"
+  },
+  "bgMenuSiteNever": {
+    "message": "Never translate this site"
+  },
+  "bgMenuOptions": {
+    "message": "Extension settings…"
+  },
+  "bgCmdToggleTranslate": {
+    "message": "Translate / restore current page"
+  },
+  "bgCmdToggleCompare": {
+    "message": "Switch: translation only / bilingual"
+  },
+  "bgUnknownMessage": {
+    "message": "Unknown message type: {0}"
+  },
+  "errGoogleFailed": {
+    "message": "Google Translate request failed (HTTP {0})"
+  },
+  "errDeeplNoKey": {
+    "message": "No DeepL API key configured — add one in Settings"
+  },
+  "errDeeplFailed": {
+    "message": "DeepL request failed (HTTP {0})"
+  },
+  "errNoUrl": {
+    "message": "“{0}” has no endpoint URL"
+  },
+  "errNoApiKey": {
+    "message": "“{0}” has no API key"
+  },
+  "errRequestFailed": {
+    "message": "“{0}” {1} (retried {2} times)"
+  },
+  "errHttp": {
+    "message": "“{0}” returned HTTP {1}: {2}"
+  },
+  "errNotJson": {
+    "message": "“{0}” did not return JSON: {1}"
+  },
+  "errApiError": {
+    "message": "“{0}” returned an error: {1}"
+  },
+  "errNoTranslation": {
+    "message": "“{0}” produced no translation: response path “{1}” matched nothing. Response snippet: {2}"
+  },
+  "errWholeResponse": {
+    "message": "(whole response)"
+  },
+  "errCannotConnect": {
+    "message": "Can't reach the service — the URL is wrong, or the service isn't running"
+  }
+}

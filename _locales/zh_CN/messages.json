@@ -1,0 +1,620 @@
+{
+  "extName": {
+    "message": "栖译 — 双语对照网页翻译"
+  },
+  "extDesc": {
+    "message": "双语对照网页翻译：整页翻译、鼠标悬停翻译、划词翻译、输入框翻译。可保存多套模型配置随时切换，支持 OpenAI 兼容接口、Anthropic Claude、Google Gemini、Ollama 本地模型，以及任意自定义 HTTP 接口。"
+  },
+  "typeGoogle": {
+    "message": "Google 翻译（免费，无需配置）"
+  },
+  "typeDeepl": {
+    "message": "DeepL（需 API Key）"
+  },
+  "typeOpenai": {
+    "message": "OpenAI 兼容（DeepSeek / Moonshot / 自建服务…）"
+  },
+  "typeAnthropic": {
+    "message": "Anthropic Claude"
+  },
+  "typeGemini": {
+    "message": "Google Gemini"
+  },
+  "typeOllama": {
+    "message": "Ollama（本地模型）"
+  },
+  "typeCustom": {
+    "message": "自定义接口（任意 HTTP 服务）"
+  },
+  "urlLabelBase": {
+    "message": "Base URL"
+  },
+  "urlLabelEndpoint": {
+    "message": "服务地址"
+  },
+  "urlLabelUrl": {
+    "message": "请求地址"
+  },
+  "urlHintBase": {
+    "message": "填到版本号为止，如 https://api.deepseek.com/v1；本地服务如 http://localhost:1234/v1"
+  },
+  "urlHintAnthropic": {
+    "message": "默认 https://api.anthropic.com，一般无需修改"
+  },
+  "urlHintGemini": {
+    "message": "默认 https://generativelanguage.googleapis.com，一般无需修改"
+  },
+  "urlHintOllama": {
+    "message": "默认 http://localhost:11434；需先运行 ollama serve 并拉取模型"
+  },
+  "urlHintCustom": {
+    "message": "完整的请求 URL，可在高级设置里自定义请求头、请求体与结果取值路径"
+  },
+  "appTitle": {
+    "message": "栖译 · 设置"
+  },
+  "commonSaved": {
+    "message": "已保存"
+  },
+  "commonDelete": {
+    "message": "删除"
+  },
+  "secBasic": {
+    "message": "基础"
+  },
+  "targetLang": {
+    "message": "目标语言"
+  },
+  "targetLangHint": {
+    "message": "网页将被翻译成该语言"
+  },
+  "displayMode": {
+    "message": "显示方式"
+  },
+  "modeBilingual": {
+    "message": "双语对照（原文 + 译文）"
+  },
+  "modeTranslation": {
+    "message": "仅显示译文"
+  },
+  "displayStyle": {
+    "message": "译文样式"
+  },
+  "styleDashed": {
+    "message": "虚线下划线"
+  },
+  "styleUnderline": {
+    "message": "实线下划线"
+  },
+  "styleHighlight": {
+    "message": "高亮背景"
+  },
+  "styleQuote": {
+    "message": "左侧引用线"
+  },
+  "styleNone": {
+    "message": "无修饰"
+  },
+  "fontSize": {
+    "message": "译文字号"
+  },
+  "secInteraction": {
+    "message": "交互"
+  },
+  "autoTranslate": {
+    "message": "打开网页时自动翻译"
+  },
+  "autoTranslateNote": {
+    "message": "（母语页面会自动跳过）"
+  },
+  "showFloatBall": {
+    "message": "显示页面右下角悬浮球"
+  },
+  "hoverTranslate": {
+    "message": "鼠标悬停翻译单个段落"
+  },
+  "hoverHotkey": {
+    "message": "悬停触发键"
+  },
+  "hotkeyShift": {
+    "message": "按住 Shift + 悬停"
+  },
+  "hotkeyCtrl": {
+    "message": "按住 Ctrl + 悬停"
+  },
+  "hotkeyAlt": {
+    "message": "按住 Alt + 悬停"
+  },
+  "hotkeyNone": {
+    "message": "仅悬停（无需按键）"
+  },
+  "selectionTranslate": {
+    "message": "划词翻译气泡"
+  },
+  "inputTranslate": {
+    "message": "输入框翻译（连按 3 次空格，把输入内容译成目标语言）"
+  },
+  "secService": {
+    "message": "翻译服务"
+  },
+  "currentService": {
+    "message": "当前使用"
+  },
+  "btnNewService": {
+    "message": "＋ 新建"
+  },
+  "serviceHint": {
+    "message": "可保存多套服务配置随时切换。本地模型（Ollama、LM Studio 等）不填 API Key 也能用。"
+  },
+  "btnTestService": {
+    "message": "测试当前服务"
+  },
+  "providerName": {
+    "message": "名称"
+  },
+  "providerNameHint": {
+    "message": "显示在下拉列表里的名字，随便取"
+  },
+  "providerType": {
+    "message": "类型"
+  },
+  "fieldApiKey": {
+    "message": "API Key"
+  },
+  "fieldModel": {
+    "message": "模型"
+  },
+  "fieldModelHint": {
+    "message": "如 gpt-4o-mini、deepseek-chat、claude-sonnet-4-5、gemini-2.0-flash、qwen2.5:7b"
+  },
+  "fieldTemperature": {
+    "message": "Temperature"
+  },
+  "fieldTemperatureHint": {
+    "message": "翻译建议 0，越小越稳定"
+  },
+  "fieldPro": {
+    "message": "使用 DeepL Pro 端点"
+  },
+  "fieldSystemPrompt": {
+    "message": "系统提示词"
+  },
+  "fieldSystemPromptHint": {
+    "message": "可用 {{target}} 占位目标语言名称。留空则用内置提示词"
+  },
+  "promptSystem": {
+    "message": "你是专业翻译引擎。将用户提供的文本翻译为{{target}}。只输出译文，不要解释，不要加引号。保留原文中的 HTML 标签与占位符不变。"
+  },
+  "promptContextRule": {
+    "message": "\n输入是同一篇文章里连续的段落（JSON 字符串数组），请输出等长的 JSON 字符串数组，逐条对应翻译结果。请主动利用上下文：保持全文术语、人称与语气一致，并据此消除歧义（代词指代、多义词、省略句）。不要输出任何其他内容。"
+  },
+  "promptExpert": {
+    "message": "\n你的身份是「{0}」领域的专家译者，请使用该领域的专业表达。"
+  },
+  "promptGlossary": {
+    "message": "\n必须遵守以下术语对照表（左侧原文一律译为右侧译文）：\n{0}"
+  },
+  "promptTitle": {
+    "message": "\n这篇文章的标题是「{0}」，仅用于帮你判断领域与语境，不要翻译它。"
+  },
+  "promptContext": {
+    "message": "\n以下是待翻译内容前后的段落，仅供你理解语境，不要翻译它们：\n{0}"
+  },
+  "fieldExpert": {
+    "message": "AI 专家身份"
+  },
+  "fieldExpertPlaceholder": {
+    "message": "如：计算机科学 / 医学 / 法律"
+  },
+  "fieldExpertHint": {
+    "message": "留空则不启用"
+  },
+  "fieldGlossary": {
+    "message": "术语库"
+  },
+  "fieldGlossaryHint": {
+    "message": "每行一条「原文=译文」，译文中遇到左侧词汇时强制使用右侧译法"
+  },
+  "fieldGlossaryPlaceholder": {
+    "message": "prompt=提示词\ntoken=词元"
+  },
+  "advSummary": {
+    "message": "高级设置：接口返回解析不对，或要接非标准接口时改这里"
+  },
+  "advMethod": {
+    "message": "请求方法"
+  },
+  "advMethodHint": {
+    "message": "一般是 POST；填 GET 时不会发送请求体"
+  },
+  "advUrlTemplate": {
+    "message": "请求地址模板"
+  },
+  "advUrlTemplateHint": {
+    "message": "{{url}} 即上面填的地址"
+  },
+  "advHeaders": {
+    "message": "请求头"
+  },
+  "advHeadersHint": {
+    "message": "每行一条「Key: Value」"
+  },
+  "advBody": {
+    "message": "请求体模板"
+  },
+  "advBodyHint": {
+    "message": "占位符会按 JSON 值插入，不用自己加引号"
+  },
+  "advResponsePath": {
+    "message": "结果取值路径"
+  },
+  "advResponsePathHint": {
+    "message": "如 choices[0].message.content；留空表示整个响应就是译文"
+  },
+  "advVarsHint": {
+    "message": "请求体可用变量：{{url}} {{apiKey}} {{model}} {{temperature}} {{target}} {{source}} {{system}} {{texts}}（JSON 数组字符串） {{textsJson}}（真数组） {{text}}（整段纯文本）"
+  },
+  "placeholderApiKey": {
+    "message": "sk-…"
+  },
+  "placeholderUrl": {
+    "message": "https://…"
+  },
+  "testRunning": {
+    "message": "测试中…"
+  },
+  "testSource": {
+    "message": "原文："
+  },
+  "testResult": {
+    "message": "译文："
+  },
+  "testFailed": {
+    "message": "失败："
+  },
+  "testUnknownError": {
+    "message": "未知错误"
+  },
+  "secSites": {
+    "message": "网站规则"
+  },
+  "secSubtitle": {
+    "message": "视频字幕"
+  },
+  "subtitleTranslate": {
+    "message": "翻译视频字幕"
+  },
+  "subtitleHint": {
+    "message": "视频本身带字幕时自动显示双语字幕，不会主动去打开字幕。目前支持标准 WebVTT 字幕，以及 YouTube 的自绘字幕。"
+  },
+  "subtitleMode": {
+    "message": "字幕显示方式"
+  },
+  "subtitleModeBilingual": {
+    "message": "原文 + 译文"
+  },
+  "subtitleModeTranslation": {
+    "message": "仅译文"
+  },
+  "subtitleFontScale": {
+    "message": "字幕字号"
+  },
+  "sitesHint": {
+    "message": "在网页上右键，或用弹窗为单个网站设置「总是翻译 / 从不翻译」。"
+  },
+  "siteAlways": {
+    "message": "总是翻译"
+  },
+  "siteNever": {
+    "message": "从不翻译"
+  },
+  "siteNone": {
+    "message": "暂无站点规则"
+  },
+  "confirmDeleteProvider": {
+    "message": "确定删除服务「{0}」？"
+  },
+  "needOneProvider": {
+    "message": "至少要保留一个服务"
+  },
+  "createdProvider": {
+    "message": "已新建「{0}」，记得填写 API Key"
+  },
+  "confirmReset": {
+    "message": "确定恢复所有设置为默认值？服务配置与站点规则都会丢失。"
+  },
+  "resetDone": {
+    "message": "已恢复默认"
+  },
+  "cacheCleared": {
+    "message": "缓存已清空"
+  },
+  "deleted": {
+    "message": "已删除"
+  },
+  "secShortcuts": {
+    "message": "快捷键"
+  },
+  "shortcutPageHint": {
+    "message": "Chrome 不允许扩展自己修改快捷键，需要到浏览器的快捷键页面调整。"
+  },
+  "btnOpenShortcutPage": {
+    "message": "修改快捷键"
+  },
+  "shortcutUnset": {
+    "message": "未设置"
+  },
+  "shortcutConflictHint": {
+    "message": "快捷键与浏览器或其他扩展冲突时，Chrome 会静默忽略，建议换一个组合。"
+  },
+  "secData": {
+    "message": "数据"
+  },
+  "btnClearCache": {
+    "message": "清空译文缓存"
+  },
+  "btnResetDefaults": {
+    "message": "恢复默认设置"
+  },
+  "cacheHint": {
+    "message": "译文缓存只存在内存里，浏览器重启即清空。"
+  },
+  "popTranslatePage": {
+    "message": "翻译此页面"
+  },
+  "popRestorePage": {
+    "message": "还原原文"
+  },
+  "popRuleDefault": {
+    "message": "默认"
+  },
+  "popMoreSettings": {
+    "message": "更多设置"
+  },
+  "popShortcutLine": {
+    "message": "Alt+A 翻译 · Alt+W 切换对照"
+  },
+  "popExport": {
+    "message": "导出双语对照"
+  },
+  "popOpenPdf": {
+    "message": "翻译 PDF 文件"
+  },
+  "pdfTitle": {
+    "message": "栖译 · PDF 翻译"
+  },
+  "pdfDropHint": {
+    "message": "把 PDF 文件拖到这里，或者"
+  },
+  "pdfPickFile": {
+    "message": "选择文件"
+  },
+  "pdfLimitHint": {
+    "message": "只支持带文本层的 PDF；扫描件（纯图片）里没有文字，读不出来。"
+  },
+  "pdfParsing": {
+    "message": "正在解析…"
+  },
+  "pdfParsingPage": {
+    "message": "正在解析第 {0}/{1} 页…"
+  },
+  "pdfParseFailed": {
+    "message": "解析失败：{0}"
+  },
+  "pdfNoText": {
+    "message": "这个 PDF 里没有可提取的文字（可能是扫描件）。"
+  },
+  "pdfSummary": {
+    "message": "共 {0} 段，已翻译 {1} 段"
+  },
+  "pdfTranslateAll": {
+    "message": "翻译全文"
+  },
+  "pdfOpenAnother": {
+    "message": "打开其它 PDF"
+  },
+  "pdfExport": {
+    "message": "导出 Markdown"
+  },
+  "pdfTranslating": {
+    "message": "正在翻译…"
+  },
+  "exportEmpty": {
+    "message": "还没有译文可以导出，请先翻译页面"
+  },
+  "popUnsupported": {
+    "message": "当前页面不支持翻译（浏览器内置页或商店页）"
+  },
+  "popNeedKey": {
+    "message": "该服务需要 API Key，请到「更多设置」中填写"
+  },
+  "popConfigError": {
+    "message": "读取配置失败"
+  },
+  "welTitle": {
+    "message": "栖译已装好"
+  },
+  "welLead": {
+    "message": "让网页变成双语对照，翻译模型由你自己选。"
+  },
+  "welStep1": {
+    "message": "打开任意外文网页"
+  },
+  "welStep1Note": {
+    "message": "页面右下角会出现一个悬浮球"
+  },
+  "welStep2": {
+    "message": "点悬浮球，或按 Alt+A"
+  },
+  "welStep2Note": {
+    "message": "译文会以双语对照的形式插在每段原文下方"
+  },
+  "welStep3": {
+    "message": "换成你自己的模型"
+  },
+  "welStep3Note": {
+    "message": "默认用 Google 免费翻译，随时可以换成任意大模型"
+  },
+  "welBtnOptions": {
+    "message": "去配置模型"
+  },
+  "welBtnClose": {
+    "message": "知道了"
+  },
+  "welMoreTitle": {
+    "message": "还有三种用法"
+  },
+  "welCardHover": {
+    "message": "悬停翻译"
+  },
+  "welCardHoverNote": {
+    "message": "按住 <kbd>Shift</kbd> 把鼠标停在某个段落上，只翻这一段。"
+  },
+  "welCardSelection": {
+    "message": "划词翻译"
+  },
+  "welCardSelectionNote": {
+    "message": "选中任意文字，立刻弹出译文气泡，可以一键复制。"
+  },
+  "welCardInput": {
+    "message": "输入框翻译"
+  },
+  "welCardInputNote": {
+    "message": "在输入框里连按 <kbd>3</kbd> 次空格，把正在写的内容译成目标语言。"
+  },
+  "welMoreHint": {
+    "message": "开关和快捷键都能在设置里调整。<kbd>Alt+W</kbd> 可在「双语对照 / 仅译文」之间切换。"
+  },
+  "welPrivacyTitle": {
+    "message": "关于你的数据"
+  },
+  "welPrivacyNote": {
+    "message": "设置和译文缓存只保存在这台电脑上。翻译时，页面文本会直接发送到你自己配置的那个接口，栖译没有中转服务器，不收集、不上传任何数据。"
+  },
+  "welFooter": {
+    "message": "随时可以在扩展图标 → 齿轮里回来调整设置"
+  },
+  "csRetryFailed": {
+    "message": "翻译失败，点击重试"
+  },
+  "csFailed": {
+    "message": "翻译失败：{0}"
+  },
+  "csInputFailed": {
+    "message": "输入框翻译失败：{0}"
+  },
+  "csNoParagraphs": {
+    "message": "本页未找到可翻译的段落"
+  },
+  "csModeBilingual": {
+    "message": "双语对照"
+  },
+  "csModeTranslation": {
+    "message": "仅显示译文"
+  },
+  "csCopied": {
+    "message": "已复制"
+  },
+  "csCopyOne": {
+    "message": "复制这段译文"
+  },
+  "csEdit": {
+    "message": "编辑译文"
+  },
+  "csRetranslate": {
+    "message": "重新翻译这一段（会带上前后文）"
+  },
+  "csCopyFailed": {
+    "message": "复制失败，浏览器拒绝了剪贴板访问"
+  },
+  "csNoResult": {
+    "message": "(无译文)"
+  },
+  "csTranslating": {
+    "message": "翻译中"
+  },
+  "csBallTitle": {
+    "message": "点击翻译/还原本页（Alt+A）"
+  },
+  "csBallFailedTitle": {
+    "message": "有 {0} 段翻译失败，点击重试整页"
+  },
+  "exportSource": {
+    "message": "来源：{0}"
+  },
+  "csBallText": {
+    "message": "译"
+  },
+  "csBubbleTitle": {
+    "message": "译文"
+  },
+  "csCopy": {
+    "message": "复制"
+  },
+  "csClose": {
+    "message": "关闭"
+  },
+  "csNoResponse": {
+    "message": "无响应"
+  },
+  "bgMenuTranslatePage": {
+    "message": "翻译/还原此页面"
+  },
+  "bgMenuTranslateSelection": {
+    "message": "翻译选中文本"
+  },
+  "bgMenuSiteAlways": {
+    "message": "总是翻译此网站"
+  },
+  "bgMenuSiteNever": {
+    "message": "从不翻译此网站"
+  },
+  "bgMenuOptions": {
+    "message": "扩展设置…"
+  },
+  "bgCmdToggleTranslate": {
+    "message": "翻译/还原当前页面"
+  },
+  "bgCmdToggleCompare": {
+    "message": "切换：仅译文 / 双语对照"
+  },
+  "bgUnknownMessage": {
+    "message": "未知消息类型：{0}"
+  },
+  "errGoogleFailed": {
+    "message": "Google 翻译请求失败 (HTTP {0})"
+  },
+  "errDeeplNoKey": {
+    "message": "未配置 DeepL API Key，请在设置中填写"
+  },
+  "errDeeplFailed": {
+    "message": "DeepL 请求失败 (HTTP {0})"
+  },
+  "errNoUrl": {
+    "message": "「{0}」未填写接口地址"
+  },
+  "errNoApiKey": {
+    "message": "「{0}」未填写 API Key"
+  },
+  "errRequestFailed": {
+    "message": "「{0}」{1}（已自动重试 {2} 次）"
+  },
+  "errHttp": {
+    "message": "「{0}」返回 HTTP {1}：{2}"
+  },
+  "errNotJson": {
+    "message": "「{0}」返回的不是 JSON：{1}"
+  },
+  "errApiError": {
+    "message": "「{0}」返回错误：{1}"
+  },
+  "errNoTranslation": {
+    "message": "「{0}」没取到译文：结果路径「{1}」未匹配到文本。响应片段：{2}"
+  },
+  "errWholeResponse": {
+    "message": "(整个响应)"
+  },
+  "errCannotConnect": {
+    "message": "无法连接到服务：地址写错了，或者服务没有启动"
+  }
+}

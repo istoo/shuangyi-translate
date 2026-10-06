@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title data-i18n="extName">栖译</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="head">
+    <div class="brand"><span class="logo">双</span><span>栖译</span></div>
+    <button id="openOptions" class="icon-btn" title="⚙">⚙</button>
+  </header>
+
+  <button id="toggle" class="primary">翻译此页面</button>
+
+  <div class="row">
+    <label data-i18n="targetLang">目标语言</label>
+    <select id="targetLang"></select>
+  </div>
+
+  <div class="row">
+    <label data-i18n="secService">翻译服务</label>
+    <select id="engine"></select>
+  </div>
+
+  <div class="row">
+    <label data-i18n="displayMode">显示方式</label>
+    <div class="seg" id="modeSeg">
+      <button data-mode="bilingual" data-i18n="csModeBilingual">双语对照</button>
+      <button data-mode="translation" data-i18n="csModeTranslation">仅译文</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <label data-i18n="displayStyle">译文样式</label>
+    <select id="displayStyle">
+      <option value="dashed" data-i18n="styleDashed">虚线下划线</option>
+      <option value="underline" data-i18n="styleUnderline">实线下划线</option>
+      <option value="highlight" data-i18n="styleHighlight">高亮背景</option>
+      <option value="blockquote" data-i18n="styleQuote">左侧引用线</option>
+      <option value="none" data-i18n="styleNone">无修饰</option>
+    </select>
+  </div>
+
+  <div class="site">
+    <div class="site-host" id="host">—</div>
+    <div class="seg small" id="siteSeg">
+      <button data-rule="always" data-i18n="siteAlways">总是翻译</button>
+      <button data-rule="" data-i18n="popRuleDefault">默认</button>
+      <button data-rule="never" data-i18n="siteNever">从不翻译</button>
+    </div>
+  </div>
+
+  <button id="exportBtn" class="ghost wide" data-i18n="popExport">导出双语对照</button>
+  <button id="openPdf" class="ghost wide" data-i18n="popOpenPdf">翻译 PDF 文件</button>
+
+  <footer class="foot">
+    <span data-i18n="popShortcutLine">Alt+A 翻译 · Alt+W 切换对照</span>
+    <a href="#" id="openOptions2" data-i18n="popMoreSettings">更多设置</a>
+  </footer>
+  <div id="err" class="err"></div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

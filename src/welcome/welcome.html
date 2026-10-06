@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title data-i18n="welTitle">欢迎使用栖译</title>
+  <link rel="stylesheet" href="welcome.css" />
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">双</div>
+    <h1 data-i18n="welTitle">栖译已装好</h1>
+    <p class="lead" data-i18n="welLead">让网页变成双语对照，翻译模型由你自己选。</p>
+  </header>
+
+  <section>
+    <h2 data-i18n="secBasic">基础</h2>
+    <ol class="steps">
+      <li><div><b data-i18n="welStep1">打开任意外文网页</b><span data-i18n="welStep1Note">页面右下角会出现一个悬浮球</span></div></li>
+      <li><div><b data-i18n="welStep2">点悬浮球，或按 Alt+A</b><span data-i18n="welStep2Note">译文会以双语对照的形式插在每段原文下方</span></div></li>
+      <li><div><b data-i18n="welStep3">换成你自己的模型</b><span data-i18n="welStep3Note">默认用 Google 免费翻译</span></div></li>
+    </ol>
+    <div class="actions">
+      <button id="openOptions" class="primary" data-i18n="welBtnOptions">去配置模型</button>
+      <button id="closeTab" class="ghost" data-i18n="welBtnClose">知道了</button>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="welMoreTitle">还有三种用法</h2>
+    <div class="cards">
+      <div class="card">
+        <b data-i18n="welCardHover">悬停翻译</b>
+        <p data-i18n-html="welCardHoverNote">按住 Shift 把鼠标停在某个段落上。</p>
+      </div>
+      <div class="card">
+        <b data-i18n="welCardSelection">划词翻译</b>
+        <p data-i18n="welCardSelectionNote">选中任意文字，立刻弹出译文气泡。</p>
+      </div>
+      <div class="card">
+        <b data-i18n="welCardInput">输入框翻译</b>
+        <p data-i18n-html="welCardInputNote">在输入框里连按 3 次空格。</p>
+      </div>
+    </div>
+    <p class="hint" data-i18n-html="welMoreHint">开关和快捷键都能在设置里调整。</p>
+  </section>
+
+  <section>
+    <h2 data-i18n="welPrivacyTitle">关于你的数据</h2>
+    <p class="privacy" data-i18n="welPrivacyNote">设置和译文缓存只保存在这台电脑上。</p>
+  </section>
+
+  <footer data-i18n="welFooter">随时可以在扩展图标 → 齿轮里回来调整设置</footer>
+</div>
+<script type="module" src="welcome.js"></script>
+</body>
+</html>

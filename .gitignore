@@ -1,0 +1,14 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+
+# 签名私钥：绝不能进版本库
+keys/
+
+# 系统与编辑器
+.DS_Store
+*.log
+.idea/
+.vscode/

@@ -1,0 +1,287 @@
+/* 栖译 —— 页面注入样式
+   命名统一 irt- 前缀，尽量用 :where() 降低优先级冲突，同时对关键属性加 !important 抵御站点样式。*/
+
+.irt-translation {
+  display: block;
+  margin: 0.25em 0 0.35em;
+  color: inherit;
+  font-size: calc(1em * var(--irt-font-scale, 1));
+  line-height: 1.6;
+  text-align: inherit;
+  unicode-bidi: isolate;
+}
+
+.irt-translation.irt-inline {
+  display: inline;
+  margin: 0 0 0 0.35em;
+}
+
+/* --- 译文标记样式 --- */
+.irt-style-dashed { border-bottom: 1px dashed rgba(125, 125, 125, 0.55); padding-bottom: 0.15em; }
+.irt-style-underline { text-decoration: underline; text-decoration-style: solid; text-decoration-color: rgba(56, 132, 255, 0.5); text-underline-offset: 3px; }
+.irt-style-highlight { background: rgba(255, 213, 79, 0.22); border-radius: 3px; padding: 0.05em 0.25em; }
+.irt-style-blockquote { border-left: 3px solid rgba(56, 132, 255, 0.55); padding-left: 0.65em; }
+.irt-style-none { /* 无修饰 */ }
+
+/* 仅译文模式：隐藏原文，但保留译文节点 */
+html[data-irt-on='translation'] [data-irt-hide-origin] > *:not(.irt-translation),
+html[data-irt-on='translation'] [data-irt-hide-origin]::before {
+  display: none !important;
+}
+html[data-irt-on='translation'] [data-irt-hide-origin] {
+  font-size: 0 !important;   /* 抹掉裸露的文本节点 */
+}
+html[data-irt-on='translation'] [data-irt-hide-origin] > .irt-translation {
+  font-size: calc(1rem * var(--irt-font-scale, 1)) !important;
+  display: block !important;
+}
+
+/* 翻译中的段落：轻微渐变闪烁，提示正在处理 */
+.irt-pending {
+  position: relative;
+  opacity: 0.82;
+  transition: opacity 0.2s;
+}
+.irt-pending::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -2px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(56, 132, 255, 0.85), transparent);
+  animation: irt-scan 1.1s linear infinite;
+  pointer-events: none;
+}
+@keyframes irt-scan { 0% { transform: translateX(-40%); opacity: 0.3; } 50% { opacity: 1; } 100% { transform: translateX(40%); opacity: 0.3; } }
+
+[data-irt-state='error'] { outline: 1px dotted rgba(220, 70, 70, 0.45); outline-offset: 2px; }
+
+/* 气泡里的加载指示（irt-spin 关键帧定义在悬浮球那节） */
+.irt-spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border: 2px solid rgba(125, 135, 150, 0.32);
+  border-top-color: #3884ff;
+  border-radius: 50%;
+  animation: irt-spin 0.7s linear infinite;
+}
+
+/* 失败的段落：可点击的重试入口（带 MARK 类，便于还原时一并清理） */
+.irt-translation.irt-retry {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  margin: 0.2em 0 0.3em !important;
+  padding: 2px 9px;
+  font: 500 max(11px, 0.74em)/1.7 -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #d9433c !important;
+  background: rgba(217, 67, 60, 0.09) !important;
+  border: 1px solid rgba(217, 67, 60, 0.32) !important;
+  border-radius: 6px;
+  text-decoration: none !important;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.85;
+  transition: background 0.15s, opacity 0.15s;
+}
+.irt-translation.irt-retry::before { content: '\21bb'; font-size: 1.1em; line-height: 1; }
+.irt-translation.irt-retry:hover { background: rgba(217, 67, 60, 0.16) !important; opacity: 1; }
+.irt-translation.irt-retry:focus-visible { outline: 2px solid rgba(217, 67, 60, 0.55); outline-offset: 1px; }
+
+/* --- 划词气泡 --- */
+.irt-bubble {
+  position: absolute;
+  z-index: 2147483646;
+  max-width: min(420px, 88vw);
+  min-width: 200px;
+  background: #ffffff;
+  color: #1a1a1a;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  font: 14px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  overflow: hidden;
+  animation: irt-pop 0.14s ease-out;
+}
+@keyframes irt-pop { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+.irt-bubble-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: linear-gradient(180deg, #f8f9fb, #f1f3f7);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+.irt-bubble-title { flex: 1; font-size: 12px; font-weight: 600; color: #5b6472; letter-spacing: 0.02em; }
+.irt-bubble-head button {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  color: #5b6472;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+.irt-bubble-head button:hover { background: rgba(0, 0, 0, 0.07); color: #1a1a1a; }
+.irt-bubble-body { padding: 10px 12px; white-space: pre-wrap; word-break: break-word; }
+
+@media (prefers-color-scheme: dark) {
+  .irt-bubble { background: #23262b; color: #e8eaed; border-color: rgba(255, 255, 255, 0.12); }
+  .irt-bubble-head { background: #2b2f36; border-bottom-color: rgba(255, 255, 255, 0.09); }
+  .irt-bubble-title, .irt-bubble-head button { color: #9aa4b2; }
+  .irt-bubble-head button:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+}
+
+/* --- 悬浮球 --- */
+.irt-ball {
+  position: fixed;
+  right: 18px;
+  bottom: 96px;
+  width: 42px;
+  height: 42px;
+  z-index: 2147483645;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.55;
+  transition: opacity 0.18s, transform 0.18s, box-shadow 0.18s;
+  font: 600 17px/1 -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #3884ff;
+}
+.irt-ball:hover { opacity: 1; transform: scale(1.06); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22); }
+.irt-ball-on { background: #3884ff; color: #fff; border-color: transparent; opacity: 0.9; }
+/* 全部翻完但存在失败段落：用红色提示还能救 */
+.irt-ball-error { background: #d9433c !important; color: #fff !important; border-color: transparent !important; opacity: 1; }
+.irt-ball-busy::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #3884ff;
+  animation: irt-spin 0.8s linear infinite;
+}
+.irt-ball-on.irt-ball-busy::before { border-top-color: #fff; }
+@keyframes irt-spin { to { transform: rotate(360deg); } }
+
+.irt-ball-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: #ff5a5f;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .irt-ball { background: rgba(40, 43, 48, 0.95); border-color: rgba(255, 255, 255, 0.14); }
+}
+
+/* --- 轻提示 --- */
+.irt-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translate(-50%, 12px);
+  z-index: 2147483647;
+  padding: 9px 16px;
+  border-radius: 8px;
+  /* 限宽：错误信息可以很长，否则会横跨整个屏幕 */
+  max-width: min(560px, 86vw);
+  box-sizing: border-box;
+  text-align: left;
+  background: rgba(30, 33, 38, 0.94);
+  color: #fff;
+  font: 13px/1.5 -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  max-width: 78vw;
+}
+.irt-toast-show { opacity: 1; transform: translate(-50%, 0); }
+.irt-toast-error { background: rgba(190, 45, 50, 0.96); }
+
+/* --- 视频字幕 --- */
+.irt-sub-layer {
+  position: fixed;
+  z-index: 2147483644;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  padding: 0 4% 5%;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+.irt-sub-layer.irt-sub-show { display: flex; }
+.irt-sub-layer.irt-sub-hidden { display: none !important; }
+
+.irt-sub-orig,
+.irt-sub-trans {
+  max-width: 100%;
+  text-align: center;
+  line-height: 1.5;
+  word-break: break-word;
+  color: #fff;
+  background: rgba(8, 10, 14, .66);
+  /* 用 box-shadow 撑出内边距，多行时每行都有底色 */
+  box-shadow: 0 0 0 .28em rgba(8, 10, 14, .66);
+  border-radius: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  margin-bottom: .34em;
+}
+.irt-sub-orig { font-size: calc(14px * var(--irt-sub-scale, 1)); color: rgba(255, 255, 255, .88); }
+.irt-sub-trans { font-size: calc(17px * var(--irt-sub-scale, 1)); font-weight: 600; }
+.irt-sub-trans.irt-sub-pending { font-size: calc(13px * var(--irt-sub-scale, 1)); font-weight: 400; opacity: .75; }
+.irt-sub-layer.irt-sub-translation-only .irt-sub-orig { display: none; }
+
+/* --- 译文的悬停操作条 --- */
+.irt-trans-actions {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: .45em;
+  vertical-align: middle;
+  opacity: 0;
+  transition: opacity .15s;
+  user-select: none;
+}
+.irt-translation:hover > .irt-trans-actions,
+.irt-translation:focus-within > .irt-trans-actions { opacity: 1; }
+.irt-trans-actions .irt-act {
+  all: unset;
+  cursor: pointer;
+  font: 12px/1 -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #7d8794;
+  background: rgba(128, 128, 128, .15);
+}
+.irt-trans-actions .irt-act:hover { background: rgba(56, 132, 255, .18); color: #3884ff; }
+.irt-trans-actions .irt-act:focus-visible { outline: 2px solid rgba(56, 132, 255, .5); outline-offset: 1px; }
+
+/* 就地编辑态 */
+.irt-translation.irt-trans-editing {
+  outline: 2px solid rgba(56, 132, 255, .45);
+  outline-offset: 3px;
+  border-radius: 3px;
+  cursor: text;
+}
+.irt-translation.irt-trans-busy { opacity: .45; }

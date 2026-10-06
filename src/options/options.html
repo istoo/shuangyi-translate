@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title data-i18n="appTitle">栖译 · 设置</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="logo">双</span><h1 data-i18n="appTitle">栖译 · 设置</h1></div>
+    <span class="saved" id="saved" data-i18n="commonSaved">已保存</span>
+  </header>
+
+  <section>
+    <h2 data-i18n="secBasic">基础</h2>
+    <div class="field">
+      <label data-i18n="targetLang">目标语言</label>
+      <select id="targetLang"></select>
+      <p class="hint" data-i18n="targetLangHint">网页将被翻译成该语言</p>
+    </div>
+    <div class="field">
+      <label data-i18n="displayMode">显示方式</label>
+      <select id="mode">
+        <option value="bilingual" data-i18n="modeBilingual">双语对照（原文 + 译文）</option>
+        <option value="translation" data-i18n="modeTranslation">仅显示译文</option>
+      </select>
+    </div>
+    <div class="field">
+      <label data-i18n="displayStyle">译文样式</label>
+      <select id="displayStyle">
+        <option value="dashed" data-i18n="styleDashed">虚线下划线</option>
+        <option value="underline" data-i18n="styleUnderline">实线下划线</option>
+        <option value="highlight" data-i18n="styleHighlight">高亮背景</option>
+        <option value="blockquote" data-i18n="styleQuote">左侧引用线</option>
+        <option value="none" data-i18n="styleNone">无修饰</option>
+      </select>
+    </div>
+    <div class="field">
+      <label><span data-i18n="fontSize">译文字号</span> <span class="val" id="fontScaleVal">1.00×</span></label>
+      <input type="range" id="fontScale" min="0.7" max="1.4" step="0.05" />
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="secInteraction">交互</h2>
+    <label class="check"><input type="checkbox" id="autoTranslate" /><span><span data-i18n="autoTranslate">打开网页时自动翻译</span><em data-i18n="autoTranslateNote">（母语页面会自动跳过）</em></span></label>
+    <label class="check"><input type="checkbox" id="showFloatBall" /><span data-i18n="showFloatBall">显示页面右下角悬浮球</span></label>
+    <label class="check"><input type="checkbox" id="hoverTranslate" /><span data-i18n="hoverTranslate">鼠标悬停翻译单个段落</span></label>
+    <div class="field indent">
+      <label data-i18n="hoverHotkey">悬停触发键</label>
+      <select id="hoverHotkey">
+        <option value="Shift" data-i18n="hotkeyShift">按住 Shift + 悬停</option>
+        <option value="Control" data-i18n="hotkeyCtrl">按住 Ctrl + 悬停</option>
+        <option value="Alt" data-i18n="hotkeyAlt">按住 Alt + 悬停</option>
+        <option value="none" data-i18n="hotkeyNone">仅悬停（无需按键）</option>
+      </select>
+    </div>
+    <label class="check"><input type="checkbox" id="selectionTranslate" /><span data-i18n="selectionTranslate">划词翻译气泡</span></label>
+    <label class="check"><input type="checkbox" id="inputTranslate" /><span data-i18n="inputTranslate">输入框翻译（连按 3 次空格，把输入内容译成目标语言）</span></label>
+  </section>
+
+  <section>
+    <h2 data-i18n="secSubtitle">视频字幕</h2>
+    <label class="check"><input type="checkbox" id="subtitleTranslate" /><span data-i18n="subtitleTranslate">翻译视频字幕</span></label>
+    <div class="field indent">
+      <label data-i18n="subtitleMode">字幕显示方式</label>
+      <select id="subtitleMode">
+        <option value="bilingual" data-i18n="subtitleModeBilingual">原文 + 译文</option>
+        <option value="translation" data-i18n="subtitleModeTranslation">仅译文</option>
+      </select>
+    </div>
+    <div class="field indent">
+      <label><span data-i18n="subtitleFontScale">字幕字号</span> <span class="val" id="subtitleFontScaleVal">1.00×</span></label>
+      <input type="range" id="subtitleFontScale" min="0.7" max="1.6" step="0.05" />
+    </div>
+    <p class="hint" data-i18n="subtitleHint">视频本身带字幕时自动显示双语字幕。</p>
+  </section>
+
+  <section id="serviceSec">
+    <h2 data-i18n="secService">翻译服务</h2>
+    <div class="field">
+      <label data-i18n="currentService">当前使用</label>
+      <div class="inline-row">
+        <select id="engineSel"></select>
+        <button class="ghost" id="btnNew" data-i18n="btnNewService">＋ 新建</button>
+        <button class="ghost danger" id="btnDel" data-i18n="commonDelete">删除</button>
+      </div>
+      <p class="hint" data-i18n="serviceHint">可保存多套服务配置随时切换。</p>
+    </div>
+    <div id="providerForm"></div>
+    <button class="test" id="testBtn" data-i18n="btnTestService">测试当前服务</button>
+    <div class="test-out" id="testOut"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="secSites">网站规则</h2>
+    <p class="hint" data-i18n="sitesHint">在网页上右键，或用弹窗为单个网站设置。</p>
+    <div id="siteList" class="site-list"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="secShortcuts">快捷键</h2>
+    <div id="shortcutList" class="shortcut-list"></div>
+    <p class="hint" data-i18n="shortcutPageHint">Chrome 不允许扩展自己修改快捷键。</p>
+    <p class="hint" data-i18n="shortcutConflictHint">快捷键冲突时 Chrome 会静默忽略。</p>
+    <button class="ghost" id="openShortcuts" data-i18n="btnOpenShortcutPage">修改快捷键</button>
+  </section>
+
+  <section>
+    <h2 data-i18n="secData">数据</h2>
+    <p class="hint" data-i18n="cacheHint">译文缓存只存在内存里。</p>
+    <button class="ghost" id="clearCache" data-i18n="btnClearCache">清空译文缓存</button>
+    <button class="ghost danger" id="reset" data-i18n="btnResetDefaults">恢复默认设置</button>
+  </section>
+</div>
+<script type="module" src="options.js"></script>
+</body>
+</html>
