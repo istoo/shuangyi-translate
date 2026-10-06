@@ -171,6 +171,21 @@ await check('onInstalled 会建右键菜单并迁移 v1 配置', async () => {
   assert.equal(stored.config.providers.find((p) => p.id === 'openai').model, 'deepseek-chat');
 });
 
+await check('setConfig 对 siteRules 是整体替换语义', async () => {
+  await send({ type: 'setConfig', patch: { siteRules: { 'a.com': 'always', 'b.com': 'never' } } });
+  let r = await send({ type: 'getConfig' });
+  assert.deepEqual(r.data.siteRules, { 'a.com': 'always', 'b.com': 'never' });
+
+  // 空对象必须能清空规则：深合并会把它当成「没有要改的键」，规则就永远删不掉
+  await send({ type: 'setConfig', patch: { siteRules: {} } });
+  r = await send({ type: 'getConfig' });
+  assert.deepEqual(r.data.siteRules, {}, '空对象应当清空规则，而不是被深合并吞掉');
+
+  await send({ type: 'setConfig', patch: { siteRules: { 'c.com': 'always' } } });
+  r = await send({ type: 'getConfig' });
+  assert.deepEqual(r.data.siteRules, { 'c.com': 'always' }, '替换语义：不应残留旧规则');
+});
+
 await check('首次安装会打开引导页', async () => {
   openedTabs.length = 0;
   listeners.installed({ reason: 'install' });

@@ -54,6 +54,7 @@
   let mutationObs = null;   // MutationObserver：动态内容
   const queue = [];         // 待翻译单元
   let flushTimer = null;
+  let rescanTimer = null;   // 定期兜底扫描的定时器，全局只保留一个
   let inflight = 0;
   let stats = { done: 0, error: 0 };
   // 用户自己改过的译文（key 是原文 html）。重译时会让位给新译文。
@@ -560,7 +561,13 @@
     const io = ensureObserver();
     for (const u of units) {
       if (u.hasAttribute(UNIT_ATTR) || u.hasAttribute(STATE_ATTR)) continue;
-      io.observe(u);
+      // 已经在视口里、或者用户已经滚过去的内容：直接翻，不等 IntersectionObserver。
+      // X 这类虚拟列表在快速滚动时，有些段落只是「闪过」视口 —— 一旦滚过去，
+      // 观察器就再也不会触发，那几段就永远不翻了（实测确实会零星漏几条）。
+      // 视口下方很远的内容仍然交给观察器懒加载，避免一上来就翻完整页。
+      const rect = u.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 800) enqueue(u);
+      else io.observe(u);
     }
     return units.length;
   }
@@ -568,22 +575,62 @@
   // 动态加载的内容（无限滚动、SPA 路由）
   function ensureMutationObserver() {
     if (mutationObs) return;
-    let pending = null;
+
+    // 注意这里是「节流」不是「防抖」。
+    // X / Twitter 这类 SPA 的 DOM 变动是持续不断的，用防抖的话每次变动都会把定时器重置，
+    // 结果扫描永远不会执行（无限滚动加载出来的内容就一直不被翻译）。
+    const pendingRoots = new Set();
+    let timer = null;
+
+    const flush = () => {
+      timer = null;
+      const roots = [...pendingRoots];
+      pendingRoots.clear();
+      for (const r of roots) if (r.isConnected) scanAndObserve(r);
+      if (pendingRoots.size) schedule();
+    };
+    const schedule = () => {
+      if (timer) return;             // 已经在排队就不再重置
+      timer = setTimeout(flush, 350);
+    };
+
     mutationObs = new MutationObserver((mutations) => {
       if (!pageTranslated) return;
-      const roots = new Set();
+      let found = false;
       for (const m of mutations) {
         for (const n of m.addedNodes) {
           if (n.nodeType !== 1) continue;
           if (n.classList?.contains(MARK) || n.closest?.('[data-irt-ignore]')) continue;
-          roots.add(n);
+          pendingRoots.add(n);
+          found = true;
         }
       }
-      if (!roots.size) return;
-      clearTimeout(pending);
-      pending = setTimeout(() => roots.forEach((r) => r.isConnected && scanAndObserve(r)), 400);
+      if (found) schedule();
     });
     mutationObs.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // 滚动时补一次扫描：虚拟列表复用节点、或变动被观察器漏掉时，滚动是个可靠的兜底信号
+  function setupScrollRescan() {
+    let timer = null;
+    window.addEventListener('scroll', () => {
+      if (!pageTranslated || timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        if (pageTranslated) scanAndObserve(document.body);
+      }, 600);
+    }, { passive: true, capture: true });
+  }
+
+  // 定期兜底：X 这类虚拟列表可能在滚动停稳之后才把内容真正放进 DOM，
+  // 单靠 MutationObserver 和滚动事件都可能错过（实测会有零星几段一直不被处理）。
+  function setupPeriodicRescan() {
+    if (rescanTimer) return;   // translatePage 会被反复调用，定时器只能建一个
+    rescanTimer = setInterval(() => {
+      if (!pageTranslated) return;
+      if (document.visibilityState === 'hidden') return;   // 标签页在后台时不白跑
+      scanAndObserve(document.body);
+    }, 3000);
   }
 
   // ---------- 整页翻译 / 还原 ----------
@@ -594,6 +641,8 @@
     document.documentElement.setAttribute('data-irt-on', config.mode);
     const n = scanAndObserve(document.body);
     ensureMutationObserver();
+    setupScrollRescan();
+    setupPeriodicRescan();
     updateBall();
     if (n === 0) toast(t('csNoParagraphs'), 'info');
   }
@@ -1057,6 +1106,10 @@
           await loadConfig();
           applyStyleVars();
           if (wasOn) { restorePage(); translatePage(); }
+          // 刚把这个站点设成「总是翻译」时也应该立刻翻，而不是等下次刷新
+          else if (siteRule() === 'always' || (config.autoTranslate && !isTargetLangPage())) {
+            translatePage();
+          }
           if (config.showFloatBall) setupBall();
           else { ball?.remove(); ball = null; }
           sendResponse({ ok: true });

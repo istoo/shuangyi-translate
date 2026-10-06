@@ -98,8 +98,18 @@ export async function ensureMigrated() {
   return false;
 }
 
+// 这几个字段是「映射表」语义（整份数据一起换掉），不能深合并。
+// 尤其是 siteRules：
+//   patch: { siteRules: {} }  本意是「清空所有站点规则」，
+//   但深合并会把它当成「没有要改的键」而什么都不做，规则永远清不掉。
+const REPLACE_KEYS = new Set(['siteRules', 'providers', 'skipLangs']);
+
 function deepMerge(base, patch) {
   for (const [k, v] of Object.entries(patch || {})) {
+    if (REPLACE_KEYS.has(k)) {
+      if (v !== undefined) base[k] = v;
+      continue;
+    }
     if (v && typeof v === 'object' && !Array.isArray(v) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) {
       deepMerge(base[k], v);
     } else if (v !== undefined) {

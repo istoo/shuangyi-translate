@@ -7,13 +7,13 @@ import { join } from 'node:path';
 const ROOT = new URL('..', import.meta.url).pathname;
 const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 const version = manifest.version;
-const base = `qiyi-translate-${version}`;
+const base = `shuangyi-translate-${version}`;
 const dist = join(ROOT, 'dist');
 const stage = join(dist, base);
 const zipPath = join(dist, `${base}.zip`);
 // 私钥不能放 dist（它是产物目录，随时会被清掉），单独存在项目根的 keys/ 下
 const keysDir = join(ROOT, 'keys');
-const keyPath = join(keysDir, 'qiyi-translate.pem');
+const keyPath = join(keysDir, 'shuangyi-translate.pem');
 
 // _locales 必须在包里：manifest 的 name/description 走 __MSG__，缺了语言包商店里会显示成 __MSG_extName__
 const INCLUDED = ['manifest.json', 'icons', 'src', '_locales', 'README.md'];

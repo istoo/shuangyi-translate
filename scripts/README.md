@@ -2,8 +2,8 @@
 
 生成两个产物，都放在 `dist/`：
 
-- `qiyi-translate-<version>.zip` —— 提交 Chrome Web Store 用
-- `qiyi-translate-<version>.crx` —— 本地 / 内网分发用（需要开发者模式或企业策略才能安装）
+- `shuangyi-translate-<version>.zip` —— 提交 Chrome Web Store 用
+- `shuangyi-translate-<version>.crx` —— 本地 / 内网分发用（需要开发者模式或企业策略才能安装）
 
 ```bash
 npm run pack
