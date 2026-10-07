@@ -26,6 +26,10 @@
     '.katex', '.MathJax', '.math', 'mjx-container',
     '.reference', '.reference-text', 'sup.reference', '.mw-editsection', '.mw-cite-backlink',
     '.noprint', '[aria-hidden="true"]',
+    // 无障碍专用文本：给屏幕阅读器的另一份文案，视觉上被压成 1px 隐藏，
+    // isVisible() 判不出来（尺寸不为 0），但翻译它没有任何意义，还可能干扰读屏。
+    '.sr-only', '.visually-hidden', '.screen-reader-text', '.screen-reader-content',
+    'faceplate-screen-reader-content',
   ].join(',');
 
   function isSkippedNode(el) {
@@ -84,6 +88,10 @@
     if (!el.isConnected) return false;
     const rect = el.getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0) return false;
+    // 无障碍专用文本的经典写法是把内容压成 1×1 再裁剪掉。这类元素尺寸不为 0，
+    // 光看 display/visibility 判不出来，但它的文字用户根本看不到——
+    // 翻译它只会在页面上凭空多出一行（Reddit 顶栏实测会挤出一串导航标签）。
+    if (rect.width <= 2 && rect.height <= 2) return false;
     const st = getComputedStyle(el);
     return st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0';
   };
@@ -108,6 +116,26 @@
 
   // ---------- 段落单元识别 ----------
   // 一个"单元"是：包含文本、且其块级子元素都不含文本的最内层块元素。
+  // 文档树里所有「根」：document 本身 + 所有 open shadow root。
+  // Reddit、YouTube 这类 web component 站点把正文放在 shadow root 里，
+  // 只走 light DOM 会漏掉绝大部分内容（实测覆盖率只有 15%）。
+  function collectRoots(start = document) {
+    const roots = [start];
+    const seen = new Set();
+    const walk = (node) => {
+      for (const el of node.querySelectorAll('*')) {
+        const sr = el.shadowRoot;   // closed shadow root 拿不到，只能跳过
+        if (sr && !seen.has(sr)) {
+          seen.add(sr);
+          roots.push(sr);
+          walk(sr);
+        }
+      }
+    };
+    walk(start);
+    return roots;
+  }
+
   function collectUnits(root) {
     const units = [];
     const walk = (el, depth) => {
@@ -115,7 +143,7 @@
       if (el.nodeType !== 1) return;
       const tag = el.tagName;
       if (isSkippedNode(el)) return;
-      if (el.classList?.contains(MARK) || el.hasAttribute?.(UNIT_ATTR)) return;
+      if (el.classList?.contains(MARK)) return;
       if (el.isContentEditable) return;
       if (el.closest('[data-irt-ignore]')) return;
       if (!isVisible(el)) return;
@@ -127,8 +155,14 @@
           ownText += child.nodeValue;
         } else if (child.nodeType === 1) {
           if (isSkippedNode(child)) continue;
-          if (isBlockish(child)) blockChildren.push(child);
-          else ownText += child.textContent || '';
+          if (isBlockish(child)) {
+            blockChildren.push(child);
+          } else {
+            ownText += visibleTextOf(child);
+            // 内联元素也可能带 shadow root（自定义元素默认就是 inline 排布）。
+            // 只把它当内联文本会吹掉它内部的所有内容，这里补一次递归。
+            if (child.shadowRoot) blockChildren.push(child);
+          }
         }
       }
 
@@ -139,6 +173,11 @@
         units.push(el);
       }
       for (const child of blockChildren) walk(child, depth + 1);
+
+      // 宿主元素的 shadow root 里可能藏着真正的内容，继续往下走
+      if (el.shadowRoot) {
+        for (const child of el.shadowRoot.children || []) walk(child, depth + 1);
+      }
     };
     walk(root, 0);
     return units;
@@ -555,12 +594,43 @@
     return observer;
   }
 
+  // 「原文」的指纹：用来识别「节点被虚拟列表复用、内容已经换掉」的情况。
+  // X / Reddit 会回收 DOM 节点再填新内容，元素上的 data-irt-unit 还留着，
+  // 只看标记就会一直跳过它，新内容永远不翻译（实测 Reddit 会漏 20 多条）。
+  //
+  // 注意必须用 serializeUnit（它跳过 .irt-translation），不能用 textContent：
+  // textContent 含译文，用户手改译文会被误判成「内容变了」而触发重译、
+  // 把手改冲掉（这个坑被 translate-actions 测试抓到过）。
+  function sourceFingerprintOf(el) {
+    return serializeUnit(el).html;
+  }
+
+  function resetUnit(el) {
+    removeTranslationOf(el);
+    el.removeAttribute(STATE_ATTR);
+    // 必须连 UNIT_ATTR 一起去掉：enqueue 开头就是
+    // `if (el.hasAttribute(UNIT_ATTR)) return`，留着它重置后根本不会重新入队。
+    el.removeAttribute(UNIT_ATTR);
+    el.removeAttribute('data-irt-hide-origin');
+    el.classList.remove('irt-pending');
+    delete el.__irtHolders;
+    delete el.__irtSourceHtml;
+  }
+
   function scanAndObserve(root = document.body) {
     if (!root || root.nodeType !== 1) return 0;
     const units = collectUnits(root);
     const io = ensureObserver();
     for (const u of units) {
-      if (u.hasAttribute(UNIT_ATTR) || u.hasAttribute(STATE_ATTR)) continue;
+      if (u.hasAttribute(UNIT_ATTR)) {
+        // 已处理过：只在内容确实变了的时候重来（复用节点的情况）
+        if (u.__irtSourceHtml !== undefined && u.__irtSourceHtml !== sourceFingerprintOf(u)) {
+          resetUnit(u);
+          enqueue(u);
+        }
+        continue;
+      }
+      if (u.hasAttribute(STATE_ATTR)) continue;
       // 已经在视口里、或者用户已经滚过去的内容：直接翻，不等 IntersectionObserver。
       // X 这类虚拟列表在快速滚动时，有些段落只是「闪过」视口 —— 一旦滚过去，
       // 观察器就再也不会触发，那几段就永远不翻了（实测确实会零星漏几条）。
@@ -610,6 +680,17 @@
     mutationObs.observe(document.body, { childList: true, subtree: true });
   }
 
+  // 新出现的 shadow root 不会被上面那个 observer 看到，滚动/定时扫描时顺手补上
+  const observedRoots = new WeakSet();
+  function observeNewRoots() {
+    if (!mutationObs) return;
+    for (const root of collectRoots(document)) {
+      if (root === document || observedRoots.has(root)) continue;
+      observedRoots.add(root);
+      try { mutationObs.observe(root, { childList: true, subtree: true }); } catch { /* 忽略 */ }
+    }
+  }
+
   // 滚动时补一次扫描：虚拟列表复用节点、或变动被观察器漏掉时，滚动是个可靠的兜底信号
   function setupScrollRescan() {
     let timer = null;
@@ -617,7 +698,9 @@
       if (!pageTranslated || timer) return;
       timer = setTimeout(() => {
         timer = null;
-        if (pageTranslated) scanAndObserve(document.body);
+        if (!pageTranslated) return;
+        observeNewRoots();
+        scanAndObserve(document.body);
       }, 600);
     }, { passive: true, capture: true });
   }
@@ -629,6 +712,7 @@
     rescanTimer = setInterval(() => {
       if (!pageTranslated) return;
       if (document.visibilityState === 'hidden') return;   // 标签页在后台时不白跑
+      observeNewRoots();
       scanAndObserve(document.body);
     }, 3000);
   }
@@ -657,15 +741,18 @@
     mutationObs?.disconnect();
     mutationObs = null;
     document.documentElement.removeAttribute('data-irt-on');
-    document.querySelectorAll(`.${MARK}`).forEach((n) => n.remove());
-    document.querySelectorAll(`[${UNIT_ATTR}]`).forEach((n) => {
-      n.removeAttribute(UNIT_ATTR);
-      n.removeAttribute(STATE_ATTR);
-      n.removeAttribute('data-irt-hide-origin');
-      n.classList.remove('irt-pending');
-      delete n.__irtHolders;
-      delete n.__irtSourceHtml;
-    });
+    // 译文可能插在 shadow root 里，document.querySelectorAll 够不到，要逐根清理
+    for (const root of collectRoots(document)) {
+      root.querySelectorAll(`.${MARK}`).forEach((n) => n.remove());
+      root.querySelectorAll(`[${UNIT_ATTR}]`).forEach((n) => {
+        n.removeAttribute(UNIT_ATTR);
+        n.removeAttribute(STATE_ATTR);
+        n.removeAttribute('data-irt-hide-origin');
+        n.classList.remove('irt-pending');
+        delete n.__irtHolders;
+        delete n.__irtSourceHtml;
+      });
+    }
     updateBall();
   }
 
@@ -741,7 +828,7 @@
     let out = '';
     for (const child of el.childNodes) {
       if (child.nodeType === 3) out += child.nodeValue;
-      else if (child.nodeType === 1 && !isSkippedNode(child)) out += visibleTextOf(child);
+      else if (child.nodeType === 1 && !isSkippedNode(child) && isVisible(child)) out += visibleTextOf(child);
     }
     return out;
   }
