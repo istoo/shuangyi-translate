@@ -4,6 +4,7 @@
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { connect, sleep } from './cdp.mjs';
+import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9353';
 const EXT = new URL('../../', import.meta.url).pathname;
@@ -61,11 +62,8 @@ const cli = await connect(cliTarget.webSocketDebuggerUrl);
 await cli.send('Runtime.enable');
 await sleep(600);
 
-const setCfg = await cli.evalJs(`new Promise(res => chrome.runtime.sendMessage({
-  type: 'setConfig',
-  patch: { engine: 'e2e', providers: [{ id: 'e2e', type: 'openai', name: 'E2E 假接口',
-    url: ${JSON.stringify(SITE)}, apiKey: 'sk-e2e', model: 'mock' }] },
-}, (r) => res(JSON.stringify({ ok: r?.ok }))))`);
+const setCfg = await setTestConfig(cli, { engine: 'e2e', providers: [{ id: 'e2e', type: 'openai',
+  name: 'E2E 假接口', url: SITE, apiKey: 'sk-e2e', model: 'mock' }] });
 check('把翻译服务指向本地假接口', JSON.parse(setCfg.value || '{}').ok === true, setCfg.value || '');
 
 await browser.send('Target.createTarget', { url: SITE });

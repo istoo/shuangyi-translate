@@ -5,6 +5,7 @@
 // 用法：先启动带调试端口的 Chrome，再 node test/e2e/walkthrough.mjs <port>
 import { createServer } from 'node:http';
 import { connect, sleep } from './cdp.mjs';
+import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9357';
 const EXT = new URL('../../', import.meta.url).pathname;
@@ -56,13 +57,13 @@ const optTarget = (await listing()).find((t) => t.url.includes('options.html'));
 const opt = await connect(optTarget.webSocketDebuggerUrl);
 await opt.send('Runtime.enable');
 await sleep(600);
-await opt.evalJs(`new Promise(res => chrome.runtime.sendMessage({ type:'setConfig', patch:{
-  engine:'e2e',
-  providers:[{id:'e2e',type:'openai',name:'E2E',url:${JSON.stringify(SITE)},apiKey:'k',model:'m'}],
-  autoTranslate:false, showFloatBall:true, hoverTranslate:true, hoverHotkey:'Shift',
-  selectionTranslate:true, inputTranslate:true, subtitleTranslate:false,
-  targetLang:'zh-CN', mode:'bilingual',
-}}, () => res(1)))`);
+await setTestConfig(opt, {
+  engine: 'e2e',
+  providers: [{ id: 'e2e', type: 'openai', name: 'E2E', url: SITE, apiKey: 'k', model: 'm' }],
+  autoTranslate: false, showFloatBall: true, hoverTranslate: true, hoverHotkey: 'Shift',
+  selectionTranslate: true, inputTranslate: true, subtitleTranslate: false,
+  targetLang: 'zh-CN', mode: 'bilingual',
+});
 
 const askTab = (msg) => opt.evalJs(`new Promise(res => {
   chrome.tabs.query({}, (tabs) => {

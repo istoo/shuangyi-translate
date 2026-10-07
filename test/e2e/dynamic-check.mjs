@@ -7,6 +7,7 @@
 // 用法：先启动带调试端口的 Chrome，再 node test/e2e/dynamic-check.mjs <port>
 import { createServer } from 'node:http';
 import { connect, sleep } from './cdp.mjs';
+import { setTestConfig, clearSiteRules } from './state.mjs';
 
 const PORT = process.argv[2] || '9363';
 const EXT = new URL('../../', import.meta.url).pathname;
@@ -94,11 +95,11 @@ const optTarget = (await listing()).find((t) => t.url.includes('options.html'));
 const opt = await connect(optTarget.webSocketDebuggerUrl);
 await opt.send('Runtime.enable');
 await sleep(500);
-await opt.evalJs(`new Promise(res => chrome.runtime.sendMessage({ type:'setConfig', patch:{
-  engine:'e2e',
-  providers:[{id:'e2e',type:'openai',name:'E2E',url:${JSON.stringify(SITE)},apiKey:'k',model:'m'}],
-  autoTranslate:false, showFloatBall:true, siteRules:{},
-}}, () => res(1)))`);
+await setTestConfig(opt, {
+  engine: 'e2e',
+  providers: [{ id: 'e2e', type: 'openai', name: 'E2E', url: SITE, apiKey: 'k', model: 'm' }],
+  autoTranslate: false, showFloatBall: true,
+});
 
 await browser.send('Target.createTarget', { url: SITE });
 await sleep(2500);
@@ -177,6 +178,9 @@ await askTab({ type: 'configChanged' }).catch(() => {});
 await sleep(3500);
 const afterRule = (await c.evalJs(`document.querySelectorAll('.irt-translation').length`)).value;
 check('设为「总是翻译」后当前页面立即开始翻译', afterRule >= 7, `${afterRule} 段`);
+
+// 本脚本给 127.0.0.1 写了「总是翻译」，不清掉的话下一个脚本会被自动翻译带偏
+await clearSiteRules(opt);
 
 c.close();
 opt.close();

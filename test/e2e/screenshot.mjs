@@ -5,6 +5,7 @@
 import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { connect, sleep } from './cdp.mjs';
+import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9338';
 const OUT = new URL('../../store/screenshots/', import.meta.url).pathname;
@@ -87,17 +88,14 @@ let optTarget = (await listing()).find((t) => t.url.includes('options.html'));
 let oc = await connect(optTarget.webSocketDebuggerUrl);
 await oc.send('Runtime.enable');
 await sleep(600);
-const reset = await oc.evalJs(`new Promise(r => chrome.runtime.sendMessage({
-  type: 'setConfig',
-  patch: {
-    engine: 'google',
-    providers: [
-      { id: 'google', type: 'google', name: 'Google 翻译' },
-      { id: 'openai', type: 'openai', name: 'OpenAI', url: 'https://api.openai.com/v1',
-        model: 'gpt-4o-mini', apiKey: 'sk-demo-placeholder', temperature: 0 },
-    ],
-  },
-}, (res) => r(JSON.stringify(res?.ok))))`);
+const reset = await setTestConfig(oc, {
+  engine: 'google',
+  providers: [
+    { id: 'google', type: 'google', name: 'Google 翻译' },
+    { id: 'openai', type: 'openai', name: 'OpenAI', url: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini', apiKey: 'sk-demo-placeholder', temperature: 0 },
+  ],
+});
 console.log('  配置重置:', reset.value);
 await sleep(400);
 

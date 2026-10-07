@@ -5,6 +5,7 @@
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { connect, sleep } from './cdp.mjs';
+import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9355';
 const EXT = new URL('../../', import.meta.url).pathname;
@@ -84,11 +85,8 @@ await c.send('DOM.enable');
 await c.send('Page.enable');
 
 // 把翻译服务指向假接口
-const cfg = await c.evalJs(`new Promise(res => chrome.runtime.sendMessage({
-  type: 'setConfig',
-  patch: { engine: 'e2e', providers: [{ id: 'e2e', type: 'openai', name: 'E2E 假接口',
-    url: ${JSON.stringify(MOCK_URL)}, apiKey: 'k', model: 'm' }] },
-}, (r) => res(JSON.stringify({ ok: r?.ok }))))`);
+const cfg = await setTestConfig(c, { engine: 'e2e', providers: [{ id: 'e2e', type: 'openai',
+  name: 'E2E 假接口', url: MOCK_URL, apiKey: 'k', model: 'm' }] });
 check('翻译服务已指向本地假接口', JSON.parse(cfg.value || '{}').ok === true);
 
 // 注入 PDF 文件

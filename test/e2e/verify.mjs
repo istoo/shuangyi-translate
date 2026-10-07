@@ -9,6 +9,8 @@
 //   node test/e2e/verify.mjs 9336
 import { createServer } from 'node:http';
 import { connect, sleep } from './cdp.mjs';
+import { setTestConfig } from './state.mjs';
+import { DEFAULTS } from '../../src/shared/config.js';
 
 const PORT = process.argv[2] || '9336';
 // 也可以指向解压后的发布包，用来验证打包产物本身是否完整可用
@@ -107,6 +109,13 @@ const opt = await connect(optTarget.webSocketDebuggerUrl);
 await opt.send('Runtime.enable');
 await sleep(900);
 
+// 先恢复出厂默认配置：下面的设置页检查要看的是「默认呈现」（档案列表、Base URL 预填值），
+// 而 providers 是全扩展共享的，跑在别的 e2e 脚本后面时会残留它们指向本地假接口的档案。
+await setTestConfig(opt, { ...DEFAULTS });
+// setConfig 只写存储，已经打开的设置页不会自己重绘，重载一次让它按新配置渲染
+await opt.send('Page.reload', {});
+await sleep(1500);
+
 // 消息必须从扩展页面发，service worker 自己发的消息不会分发给它自己
 const sendBg = (msg) => opt.evalJs(`new Promise(res => {
   chrome.runtime.sendMessage(${JSON.stringify(msg)}, (r) => {
@@ -156,9 +165,9 @@ check('高级设置折叠区存在且预填模板', after.adv === true);
 check('Base URL 预填默认值', after.base === 'https://api.openai.com/v1', after.base || '');
 
 // ---------- 真实网页翻译 ----------
-await sendBg({ type: 'setConfig', patch: { engine: 'e2e', providers: [{
+await setTestConfig(opt, { engine: 'e2e', providers: [{
   id: 'e2e', type: 'openai', name: 'E2E 假接口', url: `${SITE}/v1`, apiKey: 'sk-e2e', model: 'mock',
-}] } });
+}] });
 
 await browser.send('Target.createTarget', { url: SITE });
 await sleep(2500);
