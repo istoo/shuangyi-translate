@@ -211,7 +211,7 @@
           if (isBlockish(child)) continue;
           const i = idx++;
           holders.push(child);
-          const inner = child.textContent || '';
+          const inner = visibleTextOf(child);
           // 公式/角标作为空占位原样带过去：位置保留，内容不送翻译
           if (isSkippedNode(child)) {
             holders.verbatim.add(i);
@@ -733,12 +733,24 @@
     return null;
   }
 
-  // 元素自身+内联子孙的文本（不含块级子元素）
+  // 取元素可见的文本，碰到要跳过的标签（script/style/code 等）就不往下走。
+  // 不能用 textContent：它会把后代里的 <script> 源码一并吃进来，
+  // 结果 JS 代码被当作正文送去翻译、又插回页面（Reddit 那种 web component 里
+  // 常见 <span> 包着 <script> 的结构，实测会整页冒出代码）。
+  function visibleTextOf(el) {
+    let out = '';
+    for (const child of el.childNodes) {
+      if (child.nodeType === 3) out += child.nodeValue;
+      else if (child.nodeType === 1 && !isSkippedNode(child)) out += visibleTextOf(child);
+    }
+    return out;
+  }
+
   function directTextOf(el) {
     let s = '';
     for (const child of el.childNodes) {
       if (child.nodeType === 3) s += child.nodeValue;
-      else if (child.nodeType === 1 && !isSkippedNode(child) && !isBlockish(child)) s += child.textContent || '';
+      else if (child.nodeType === 1 && !isSkippedNode(child) && !isBlockish(child)) s += visibleTextOf(child);
     }
     return s;
   }

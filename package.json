@@ -1,11 +1,11 @@
 {
   "name": "shuangyi-translate",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "private": true,
   "description": "双译 — Chrome 双语对照网页翻译扩展（开发/测试用，扩展本身无需构建）。可接入任意大模型：OpenAI 兼容、Claude、Gemini、Ollama、自定义 HTTP 接口。",
   "type": "module",
   "scripts": {
-    "test": "node test/manifest.test.mjs && node test/i18n.test.mjs && node test/providers.test.mjs && node test/pdf-text.test.mjs && node test/engine.test.mjs && node test/service-worker.test.mjs && node test/options.test.mjs && node test/i18n-ui.test.mjs && node test/popup.test.mjs && node test/retry.test.mjs && node test/subtitles.test.mjs && node test/export.test.mjs && node test/translate-actions.test.mjs && node test/dom.test.mjs && node test/dom2.test.mjs && node test/dom3.test.mjs && node test/interact.test.mjs",
+    "test": "node test/manifest.test.mjs && node test/i18n.test.mjs && node test/providers.test.mjs && node test/pdf-text.test.mjs && node test/engine.test.mjs && node test/service-worker.test.mjs && node test/options.test.mjs && node test/i18n-ui.test.mjs && node test/popup.test.mjs && node test/inline-script.test.mjs && node test/retry.test.mjs && node test/subtitles.test.mjs && node test/export.test.mjs && node test/translate-actions.test.mjs && node test/dom.test.mjs && node test/dom2.test.mjs && node test/dom3.test.mjs && node test/interact.test.mjs",
     "test:e2e": "node test/e2e/verify.mjs",
     "pack": "node scripts/pack.mjs",
     "test:e2e:walkthrough": "node test/e2e/walkthrough.mjs"
