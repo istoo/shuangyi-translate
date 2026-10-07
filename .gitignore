@@ -12,3 +12,6 @@ keys/
 *.log
 .idea/
 .vscode/
+
+# 开发时给浏览器加载的扩展副本（由 npm run dev:sync 生成）
+dev-ext/
