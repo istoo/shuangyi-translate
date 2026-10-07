@@ -756,9 +756,11 @@
     updateBall();
   }
 
-  function togglePage() {
+  // 必须 await：translatePage 是 async，pageTranslated 要等它内部的 await 之后才置位，
+  // 不等就会把「切换前」的状态回给调用方（弹窗按钮会显示成没生效）。
+  async function togglePage() {
     if (pageTranslated) restorePage();
-    else translatePage();
+    else await translatePage();
   }
 
   async function toggleMode() {
@@ -1170,7 +1172,7 @@
       switch (msg?.type) {
         case 'togglePage':
           await loadConfig();
-          togglePage();
+          await togglePage();
           sendResponse({ ok: true, translated: pageTranslated });
           break;
         case 'translatePage':
