@@ -110,6 +110,13 @@ check('按钮跳过', !any('Submit your application'));
 console.log('\n=== 仅译文模式沿用原文字号 ===');
 check('译文记录了原文字号', trans('para')?.style.getPropertyValue('--irt-origin-fs') === '15px');
 
+console.log('\n=== 译文外观与原文一致 ===');
+const css = readFileSync('src/content/styles.css', 'utf8');
+const rule = css.match(/\n\.irt-translation \{[^}]*\}/)?.[0] || '';
+check('译文继承原文字体与行高', /font: inherit/.test(rule) && /line-height: inherit/.test(rule) && !/line-height: 1\.6/.test(rule));
+check('shadow root 内同样继承', /\.irt-translation \{[^}]*font: inherit[^}]*line-height: inherit/.test(
+  readFileSync('src/content/index.js', 'utf8')));
+
 console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);
 process.exit(fail ? 1 : 0);
 

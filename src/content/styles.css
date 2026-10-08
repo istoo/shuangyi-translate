@@ -3,10 +3,13 @@
 
 .irt-translation {
   display: block;
-  margin: 0.25em 0 0.35em;
+  /* 字体、行高、颜色全部沿用原文，让译文看起来就是页面自己的文字 */
+  margin: 0.2em 0 0;
   color: inherit;
+  font: inherit;
   font-size: calc(1em * var(--irt-font-scale, 1));
-  line-height: 1.6;
+  line-height: inherit;
+  letter-spacing: inherit;
   text-align: inherit;
   unicode-bidi: isolate;
 }
@@ -37,7 +40,7 @@ html[data-irt-on='translation'] [data-irt-hide-origin] {
 }
 html[data-irt-on='translation'] [data-irt-hide-origin] > .irt-translation {
   font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important;
-  line-height: var(--irt-origin-lh, 1.6) !important;
+  line-height: var(--irt-origin-lh, normal) !important;
   display: block !important;
 }
 /* 短标签译文直接顶替原文，保持在同一行 */

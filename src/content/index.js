@@ -18,7 +18,7 @@
   // 译文、悬停操作条和重试入口一旦插进 web component 内部，就会退回浏览器默认样式：
   // Reddit 上的 ⧉ ✎ ↻ 按钮会常驻显示并挡住按钮文字。这里给 shadow root 补最小样式。
   const SHADOW_CSS = `
-.irt-translation { display: block; margin: .25em 0 .35em; color: inherit; font-size: calc(1em * var(--irt-font-scale, 1)); line-height: 1.6; text-align: inherit; unicode-bidi: isolate; }
+.irt-translation { display: block; margin: .2em 0 0; color: inherit; font: inherit; font-size: calc(1em * var(--irt-font-scale, 1)); line-height: inherit; letter-spacing: inherit; text-align: inherit; unicode-bidi: isolate; }
 .irt-translation.irt-inline { display: inline; margin: 0 0 0 .35em; }
 .irt-style-dashed { border-bottom: 1px dashed rgba(125,125,125,.55); padding-bottom: .15em; }
 .irt-style-underline { text-decoration: underline; text-decoration-color: rgba(56,132,255,.5); text-underline-offset: 3px; }
@@ -26,7 +26,7 @@
 .irt-style-blockquote { border-left: 3px solid rgba(56,132,255,.55); padding-left: .65em; }
 [data-irt-hide-origin] > *:not(.irt-translation), [data-irt-hide-origin]::before { display: none !important; }
 [data-irt-hide-origin] { font-size: 0 !important; }
-[data-irt-hide-origin] > .irt-translation { font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important; line-height: var(--irt-origin-lh, 1.6) !important; display: block !important; }
+[data-irt-hide-origin] > .irt-translation { font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important; line-height: var(--irt-origin-lh, normal) !important; display: block !important; }
 [data-irt-hide-origin] > .irt-translation.irt-inline { display: inline !important; margin-left: 0 !important; }
 .irt-flex-host { flex-wrap: wrap !important; }
 .irt-flex-host > .irt-translation:not(.irt-inline) { flex: 1 0 100% !important; grid-column: 1 / -1 !important; }
