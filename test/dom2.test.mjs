@@ -84,8 +84,9 @@ check('时间戳"2h"不翻译', !has('tm1'));
 check('数字"1.2K"不翻译', !has('tm2'));
 
 console.log('\n=== 导航/按钮/表单 ===');
-check('导航长文本翻译', has('nav2'), '(About us)');
-check('按钮文本翻译', has('btn1'));
+// 导航、按钮是页面框架：整页翻译跳过（与沉浸式翻译一致），否则每项都被撑高
+check('导航不整页翻译', !has('nav1') && !has('nav2'));
+check('按钮不整页翻译', !has('btn1'));
 check('label 文本翻译', has('lb1'));
 check('input 不被注入译文', !T('i1').querySelector('.irt-translation') && T('i1').children.length === 0);
 

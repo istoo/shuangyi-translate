@@ -28,6 +28,8 @@
 [data-irt-hide-origin] { font-size: 0 !important; }
 [data-irt-hide-origin] > .irt-translation { font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important; line-height: var(--irt-origin-lh, 1.6) !important; display: block !important; }
 [data-irt-hide-origin] > .irt-translation.irt-inline { display: inline !important; margin-left: 0 !important; }
+.irt-flex-host { flex-wrap: wrap !important; }
+.irt-flex-host > .irt-translation:not(.irt-inline) { flex: 1 0 100% !important; grid-column: 1 / -1 !important; }
 .irt-pending { opacity: .82; }
 [data-irt-state='error'] { outline: 1px dotted rgba(220,70,70,.45); outline-offset: 2px; }
 .irt-translation.irt-retry { display: inline-flex !important; align-items: center; gap: 4px; margin: .2em 0 .3em !important; padding: 2px 9px; font: 500 max(11px,.74em)/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif; color: #d9433c !important; background: rgba(217,67,60,.09) !important; border: 1px solid rgba(217,67,60,.32) !important; border-radius: 6px; cursor: pointer; user-select: none; }
@@ -169,6 +171,32 @@
     return s.length <= 32 && s.split(' ').length <= 4 && !/[.!?。！？]$/.test(s);
   }
 
+  // 页面框架（导航、顶栏、页脚、按钮、菜单）：整页翻译时跳过整棵子树。
+  // 沉浸式翻译也是这么做的 —— 这些文字用户早就认识，翻了只会把每个导航项、
+  // 按钮撑高一截，页面立刻变乱。需要时仍可悬停单段翻译。
+  const CHROME_TAGS = new Set(['NAV', 'BUTTON']);
+  const CHROME_ROLES = new Set(['navigation', 'banner', 'contentinfo', 'menu', 'menubar',
+    'toolbar', 'tablist', 'button', 'search']);
+
+  function isPageChrome(el) {
+    if (CHROME_TAGS.has(el.tagName)) return true;
+    if (CHROME_ROLES.has(el.getAttribute('role'))) return true;
+    // 文章自己的 <header>/<footer>（标题、署名）是正文的一部分，只跳过页面级的
+    if (el.tagName === 'HEADER' || el.tagName === 'FOOTER') {
+      return !el.parentElement?.closest('article, main, [role="main"], section');
+    }
+    return false;
+  }
+
+  // 不值得整页翻译的零碎标签：非正文标签、不超过 3 个词、不成句。
+  // "Public"、"User flair"、"Weekly visitors" 这类，翻了只添乱。
+  function isTinyLabel(el, text) {
+    // 表单 label 是用户要填的东西，再短也翻
+    if (PROSE_TAGS.has(el.tagName) || el.tagName === 'LABEL') return false;
+    const s = text.replace(/\s+/g, ' ').trim();
+    return s.split(' ').length <= 3 && !/[.!?。！？]$/.test(s);
+  }
+
   // ---------- 段落单元识别 ----------
   // 一个"单元"是：包含文本、且其块级子元素都不含文本的最内层块元素。
   // 文档树里所有「根」：document 本身 + 所有 open shadow root。
@@ -201,6 +229,7 @@
       if (el.classList?.contains(MARK)) return;
       if (el.isContentEditable) return;
       if (el.closest('[data-irt-ignore]')) return;
+      if (isPageChrome(el)) return;
 
       // display:contents 的元素自己不成盒：既不能当单元（没有盒子承载译文），
       // 也不能因为 rect 是 0×0 就整棵跳过 —— 它的内容其实显示在父级的布局里。
@@ -221,7 +250,8 @@
       // 自身的裸文本（含内联子孙）有实质内容 → 本元素是一个单元。
       // 但仍要递归块级子元素：父元素有一行说明文字、下面跟着一个列表，
       // 两者都要翻译，早早 return 会让整棵子树被吞掉。
-      if (shouldTranslateText(ownText) && ownText.trim().length >= 2 && !looksLikeIdentifier(ownText)) {
+      if (shouldTranslateText(ownText) && ownText.trim().length >= 2 && !looksLikeIdentifier(ownText)
+        && !isTinyLabel(el, ownText)) {
         units.push(el);
       }
       for (const child of blockChildren) walk(child, depth + 1);
@@ -469,6 +499,9 @@
     // 行内元素的译文跟在后面并加分隔；块级元素另起一行
     if (inlineUnit) node.classList.add('irt-inline');
     else node.appendChild(buildActions(el));
+    // 单元自己是 flex/grid 时，块级译文会变成并排的一列被挤窄（Reddit 规则标题实测高了 100px+）。
+    // 让它换行独占一整行。
+    if (!inlineUnit && /flex|grid/.test(getComputedStyle(el).display)) el.classList.add('irt-flex-host');
     ensureShadowStyle(el);
     el.appendChild(node);
     markState(el, 'done');
@@ -745,7 +778,7 @@
     // `if (el.hasAttribute(UNIT_ATTR)) return`，留着它重置后根本不会重新入队。
     el.removeAttribute(UNIT_ATTR);
     el.removeAttribute('data-irt-hide-origin');
-    el.classList.remove('irt-pending');
+    el.classList.remove('irt-pending', 'irt-flex-host');
     delete el.__irtHolders;
     delete el.__irtSourceHtml;
   }
@@ -882,7 +915,7 @@
         n.removeAttribute(UNIT_ATTR);
         n.removeAttribute(STATE_ATTR);
         n.removeAttribute('data-irt-hide-origin');
-        n.classList.remove('irt-pending');
+        n.classList.remove('irt-pending', 'irt-flex-host');
         delete n.__irtHolders;
         delete n.__irtSourceHtml;
       });

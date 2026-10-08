@@ -23,6 +23,10 @@
 .irt-style-blockquote { border-left: 3px solid rgba(56, 132, 255, 0.55); padding-left: 0.65em; }
 .irt-style-none { /* 无修饰 */ }
 
+/* 单元自身是 flex/grid：块级译文换到下一整行，而不是被挤成并排的窄列 */
+.irt-flex-host { flex-wrap: wrap !important; }
+.irt-flex-host > .irt-translation:not(.irt-inline) { flex: 1 0 100% !important; grid-column: 1 / -1 !important; }
+
 /* 仅译文模式：隐藏原文，但保留译文节点 */
 html[data-irt-on='translation'] [data-irt-hide-origin] > *:not(.irt-translation),
 html[data-irt-on='translation'] [data-irt-hide-origin]::before {

@@ -17,14 +17,14 @@ const HTML = `<!doctype html><html lang="en"><body>
   <aside style="display:contents">
     <div class="contents" style="display:contents">
       <div class="card" id="c1"><a href="/support">How to Get Support</a></div>
-      <div class="card" id="c2"><a href="/discord">Official Discord Server</a></div>
+      <div class="card" id="c2"><a href="/discord">Join the official Discord server</a></div>
     </div>
   </aside>
 </div>
 <faceplate-tracker>
   <games-section style="display:inline">
-    <div class="game" id="g1">Word Grid daily puzzle</div>
-    <div class="game" id="g2">Dice Fight daily puzzle</div>
+    <div class="game" id="g1">Word Grid is a daily puzzle</div>
+    <div class="game" id="g2">Dice Fight is a daily puzzle</div>
   </games-section>
 </faceplate-tracker>
 <p id="plain">A normal paragraph with a <a href="/l">link</a> inside the sentence.</p>
@@ -82,9 +82,9 @@ await new Promise((r) => { listener({ type: 'translatePage' }, {}, () => r()); }
 await sleep(300);
 
 console.log('=== contents 容器 ===');
-check('右侧栏没有塌成一个单元', !has('How to Get Support', 'Official Discord Server'),
+check('右侧栏没有塌成一个单元', !has('How to Get Support', 'Join the official Discord server'),
   sent.find((t) => t.includes('How to Get Support')) || '(没送翻译)');
-check('右侧栏每一项各自成单元', any('How to Get Support') && any('Official Discord Server'));
+check('右侧栏每一项各自成单元', any('How to Get Support') && any('Join the official Discord server'));
 check('容器本身不承载译文', !doc.querySelector('#rail > .irt-translation')
   && !doc.querySelector('faceplate-tracker > .irt-translation'));
 
