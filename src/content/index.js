@@ -26,7 +26,8 @@
 .irt-style-blockquote { border-left: 3px solid rgba(56,132,255,.55); padding-left: .65em; }
 [data-irt-hide-origin] > *:not(.irt-translation), [data-irt-hide-origin]::before { display: none !important; }
 [data-irt-hide-origin] { font-size: 0 !important; }
-[data-irt-hide-origin] > .irt-translation { font-size: calc(1rem * var(--irt-font-scale, 1)) !important; display: block !important; }
+[data-irt-hide-origin] > .irt-translation { font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important; line-height: var(--irt-origin-lh, 1.6) !important; display: block !important; }
+[data-irt-hide-origin] > .irt-translation.irt-inline { display: inline !important; margin-left: 0 !important; }
 .irt-pending { opacity: .82; }
 [data-irt-state='error'] { outline: 1px dotted rgba(220,70,70,.45); outline-offset: 2px; }
 .irt-translation.irt-retry { display: inline-flex !important; align-items: center; gap: 4px; margin: .2em 0 .3em !important; padding: 2px 9px; font: 500 max(11px,.74em)/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif; color: #d9433c !important; background: rgba(217,67,60,.09) !important; border: 1px solid rgba(217,67,60,.32) !important; border-radius: 6px; cursor: pointer; user-select: none; }
@@ -57,6 +58,8 @@
     // isVisible() 判不出来（尺寸不为 0），但翻译它没有任何意义，还可能干扰读屏。
     '.sr-only', '.visually-hidden', '.screen-reader-text', '.screen-reader-content',
     'faceplate-screen-reader-content',
+    // Reddit 的相对时间、计数组件：原样保留，翻成「3小时前」只会撑乱元数据行
+    'faceplate-timeago', 'faceplate-number',
   ].join(',');
 
   function isSkippedNode(el) {
@@ -141,6 +144,31 @@
     return true;
   }
 
+  // 用户名、版块名、域名、产品名这类「标识」不是句子，翻了反而错：
+  // UnusualCompany1191 → 不寻常的公司1191、r/ClaudeAI → r/克劳德AI。
+  function looksLikeIdentifier(text) {
+    const s = text.trim();
+    if (/^(?:u|r)\/[\w-]+$/i.test(s)) return true;                       // u/name、r/sub
+    if (/^\d+\s*(?:s|m|h|d|w|mo|y|yr|min|hr)s?\.?\s+ago$/i.test(s)) return true;  // 3h ago
+    if (/\s/.test(s)) return false;
+    if (/^[\w-]+(?:\.[\w-]+)+$/.test(s)) return true;                    // example.com
+    if (/^[A-Z]{2,5}$/.test(s)) return true;                               // MOD、NEW、BETA 徽标
+    // 单个词里夹数字、下划线或大小写驼峰：OddBig010、Good_Potential359、ClaudeAI-mod-bot
+    return /^[\w-]+$/.test(s) && (/\d/.test(s) || /_/.test(s) || /[a-z][A-Z]/.test(s));
+  }
+
+  // 正文语义标签：哪怕很短（"Hey guys,"）也按段落另起一行
+  const PROSE_TAGS = new Set(['P', 'LI', 'DD', 'DT', 'BLOCKQUOTE', 'FIGCAPTION', 'TD', 'TH',
+    'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'CAPTION', 'SUMMARY']);
+
+  // 导航项、按钮、标签、元数据这类短 UI 文案：译文跟在原文后面同一行，
+  // 不另起块、不挂操作条。否则每个两三个词的标签都多出一行，整页布局被撑散。
+  function isShortLabel(el, text) {
+    if (PROSE_TAGS.has(el.tagName)) return false;
+    const s = text.replace(/<\/?b\d+>/g, '').replace(/\s+/g, ' ').trim();
+    return s.length <= 32 && s.split(' ').length <= 4 && !/[.!?。！？]$/.test(s);
+  }
+
   // ---------- 段落单元识别 ----------
   // 一个"单元"是：包含文本、且其块级子元素都不含文本的最内层块元素。
   // 文档树里所有「根」：document 本身 + 所有 open shadow root。
@@ -193,7 +221,7 @@
       // 自身的裸文本（含内联子孙）有实质内容 → 本元素是一个单元。
       // 但仍要递归块级子元素：父元素有一行说明文字、下面跟着一个列表，
       // 两者都要翻译，早早 return 会让整棵子树被吞掉。
-      if (shouldTranslateText(ownText) && ownText.trim().length >= 2) {
+      if (shouldTranslateText(ownText) && ownText.trim().length >= 2 && !looksLikeIdentifier(ownText)) {
         units.push(el);
       }
       for (const child of blockChildren) walk(child, depth + 1);
@@ -227,6 +255,11 @@
           }
           if (isBlockish(child)) {
             blocks.push(child);
+          } else if (!isVisible(child) && !child.shadowRoot && child.tagName !== 'BR') {
+            // 没有盒子的子元素（未分配 slot 的提示文案、收起的菜单）：用户看不到，
+            // 不能算进本单元。Reddit 头像按钮里藏着一段 "Open profile menu"，
+            // 被收进来后会在按钮里塞进一大块译文。
+            continue;
           } else if (hasBlockDescendant(child)) {
             // 内联排布、内部却装着块级内容（自定义元素很常见，比如 display:inline
             // 的整块导航）：这是容器不是一行文字，交出去单独成单元。
@@ -335,6 +368,8 @@
           if (child.classList?.contains(MARK)) continue;
           // 块级子元素是独立单元，不并入本单元的文本
           if (isBlockish(child)) continue;
+          // 看不见的子元素既不送翻译，也不克隆进译文（克隆出来反而会显示）
+          if (child.tagName !== 'BR' && child.tagName !== 'IMG' && !isVisible(child)) continue;
           const i = idx++;
           holders.push(child);
           const inner = visibleTextOf(child);
@@ -410,12 +445,21 @@
     if (!translated || !translated.trim()) return markState(el, 'done');
     removeTranslationOf(el);
 
-    const inlineUnit = getComputedStyle(el).display.startsWith('inline');
+    const inlineUnit = getComputedStyle(el).display.startsWith('inline')
+      || isShortLabel(el, el.__irtSourceHtml || translated);
+    // 仅译文模式下原文 font-size 会被压成 0，先记下原字号给译文用，避免译文忽大忽小
+    if (!el.hasAttribute('data-irt-hide-origin')) {
+      const cs = getComputedStyle(el);
+      el.__irtFontSize = cs.fontSize;
+      el.__irtLineHeight = cs.lineHeight;
+    }
     const node = document.createElement(inlineUnit ? 'span' : 'div');
     node.className = `${MARK} irt-style-${config.displayStyle}`;
     node.setAttribute('data-irt-ignore', '');
     node.dir = 'auto';
     if (config.fontScale !== 1) node.style.fontSize = `${config.fontScale}em`;
+    if (el.__irtFontSize) node.style.setProperty('--irt-origin-fs', el.__irtFontSize);
+    if (el.__irtLineHeight && el.__irtLineHeight !== 'normal') node.style.setProperty('--irt-origin-lh', el.__irtLineHeight);
     node.appendChild(deserialize(translated, holders));
 
     if (config.mode === 'translation') {
@@ -424,7 +468,7 @@
 
     // 行内元素的译文跟在后面并加分隔；块级元素另起一行
     if (inlineUnit) node.classList.add('irt-inline');
-    node.appendChild(buildActions(el));
+    else node.appendChild(buildActions(el));
     ensureShadowStyle(el);
     el.appendChild(node);
     markState(el, 'done');
