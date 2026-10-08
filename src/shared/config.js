@@ -24,7 +24,8 @@ export const DEFAULTS = {
   targetLang: 'zh-CN',
   // 这些语言的页面不翻译（视为已是母语）
   skipLangs: ['zh-CN', 'zh-TW', 'zh'],
-  displayStyle: 'dashed',
+  // 默认不加修饰：译文继承原文字体，看起来就是页面自己的文字（与沉浸式翻译一致）
+  displayStyle: 'none',
   // 'bilingual' 双语对照 | 'translation' 仅译文
   mode: 'bilingual',
   autoTranslate: false,          // 打开页面自动翻译

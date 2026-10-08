@@ -6,7 +6,7 @@ import {
   renderRawTemplate, parseHeaders, pickPath, normalizeTexts, buildSystemPrompt,
   buildRequestVars, fingerprint, resolveProvider,
 } from '../src/shared/providers.js';
-import { migrateConfig, DEFAULTS, CONFIG_VERSION } from '../src/shared/config.js';
+import { migrateConfig, DEFAULTS, CONFIG_VERSION, DISPLAY_STYLES } from '../src/shared/config.js';
 
 let pass = 0;
 let fail = 0;
@@ -207,6 +207,11 @@ check('迁移幂等：已是 v2 的配置原样返回', () => {
   const cfg = { version: CONFIG_VERSION, engine: 'google', providers: [{ id: 'google', type: 'google' }] };
   assert.equal(migrateConfig(cfg), cfg);
   assert.equal(migrateConfig(null), null);
+});
+
+check('默认译文样式为无修饰，外观与原文一致', () => {
+  assert.equal(DEFAULTS.displayStyle, 'none');
+  assert.ok(DISPLAY_STYLES.includes(DEFAULTS.displayStyle));
 });
 
 check('默认配置本身自洽（engine 能解析到档案）', () => {
