@@ -27,7 +27,7 @@ const HTML = `<!doctype html><html lang="en"><body>
 </body></html>`;
 
 const cfg = {
-  engine: 'google', targetLang: 'zh-CN', skipLangs: ['zh-CN'], displayStyle: 'dashed', mode: 'translation',
+  engine: 'google', targetLang: 'zh-CN', skipLangs: ['zh-CN'], displayStyle: 'dashed', mode: 'bilingual',
   autoTranslate: false, hoverTranslate: false, hoverHotkey: 'Shift', selectionTranslate: false,
   inputTranslate: false, showFloatBall: false, fontScale: 1, siteRules: {}, deepl: {}, openai: {},
 };
@@ -102,13 +102,30 @@ console.log('\n=== 看不见的文字不进单元 ===');
 check('隐藏提示不送翻译', !any('Expand the user drawer'), sent.find((t) => t.includes('Open the profile')) || '');
 check('可见文字仍翻译', any('Open the profile menu here'));
 
-console.log('\n=== 页面框架不整页翻译 ===');
+console.log('\n=== 双语模式：页面框架不整页翻译 ===');
 check('两三个词的零碎标签跳过', !any('Weekly visitors'));
 check('导航里的链接跳过', !any('Go to the home page'));
 check('按钮跳过', !any('Submit your application'));
-
-console.log('\n=== 仅译文模式沿用原文字号 ===');
 check('译文记录了原文字号', trans('para')?.style.getPropertyValue('--irt-origin-fs') === '15px');
+
+// 仅译文模式：就地替换，不新增行，所以导航和短标签也翻（对照沉浸式翻译）
+console.log('\n=== 仅译文模式：就地替换 ===');
+await new Promise((r) => { listener({ type: 'togglePage' }, {}, () => r()); });
+cfg.mode = 'translation';
+sent.length = 0;
+await new Promise((r) => { listener({ type: 'togglePage' }, {}, () => r()); });
+await sleep(300);
+check('导航链接翻译', any('Go to the home page'));
+check('零碎标签翻译', any('Weekly visitors'));
+check('按钮仍不翻译', !any('Submit your application'));
+check('用户名仍不翻译', !any('UnusualCompany1191'));
+check('原文元素记录字号供列表序号使用', T('para').style.getPropertyValue('--irt-origin-fs') === '15px');
+const css0 = readFileSync('src/content/styles.css', 'utf8');
+check('原文行高压成 0，不留空白行', /\[data-irt-hide-origin\] \{[^}]*line-height: 0 !important/.test(css0));
+check('译文以行内方式顶替原文', /\[data-irt-hide-origin\] > \.irt-translation \{[^}]*display: inline !important/.test(css0));
+check('操作条不占排版空间', /\.irt-trans-actions \{[^}]*position: absolute/.test(css0));
+await new Promise((r) => { listener({ type: 'togglePage' }, {}, () => r()); });
+check('还原后清掉原文上的字号变量', !T('para').getAttribute('style')?.includes('--irt-origin-fs'));
 
 console.log('\n=== 译文外观与原文一致 ===');
 const css = readFileSync('src/content/styles.css', 'utf8');

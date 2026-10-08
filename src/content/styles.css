@@ -35,18 +35,22 @@ html[data-irt-on='translation'] [data-irt-hide-origin] > *:not(.irt-translation)
 html[data-irt-on='translation'] [data-irt-hide-origin]::before {
   display: none !important;
 }
+/* 字号、行高都压成 0：裸露的原文文本节点不占宽也不占高。
+   只压字号的话，原文仍会撑出一整行空白（Reddit 每段多出 20px，标题多出 33px）。 */
 html[data-irt-on='translation'] [data-irt-hide-origin] {
-  font-size: 0 !important;   /* 抹掉裸露的文本节点 */
+  font-size: 0 !important;
+  line-height: 0 !important;
 }
+/* 列表序号跟着原文字号，和译文留在同一行 */
+html[data-irt-on='translation'] [data-irt-hide-origin]::marker {
+  font-size: var(--irt-origin-fs, 1rem);
+}
+/* 译文以行内方式顶替原文：不新增块、不改间距，页面结构和原来一模一样 */
 html[data-irt-on='translation'] [data-irt-hide-origin] > .irt-translation {
   font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important;
   line-height: var(--irt-origin-lh, normal) !important;
-  display: block !important;
-}
-/* 短标签译文直接顶替原文，保持在同一行 */
-html[data-irt-on='translation'] [data-irt-hide-origin] > .irt-translation.irt-inline {
   display: inline !important;
-  margin-left: 0 !important;
+  margin: 0 !important;
 }
 
 /* 翻译中的段落：轻微渐变闪烁，提示正在处理 */
@@ -268,6 +272,8 @@ html[data-irt-on='translation'] [data-irt-hide-origin] > .irt-translation.irt-in
 
 /* --- 译文的悬停操作条 --- */
 .irt-trans-actions {
+  /* 绝对定位但不给偏移：停在文字末尾，却不占排版空间，不会挤出新行 */
+  position: absolute;
   display: inline-flex;
   gap: 3px;
   margin-left: .45em;

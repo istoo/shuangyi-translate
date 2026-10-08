@@ -25,16 +25,16 @@
 .irt-style-highlight { background: rgba(255,213,79,.22); border-radius: 3px; padding: .05em .25em; }
 .irt-style-blockquote { border-left: 3px solid rgba(56,132,255,.55); padding-left: .65em; }
 [data-irt-hide-origin] > *:not(.irt-translation), [data-irt-hide-origin]::before { display: none !important; }
-[data-irt-hide-origin] { font-size: 0 !important; }
-[data-irt-hide-origin] > .irt-translation { font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important; line-height: var(--irt-origin-lh, normal) !important; display: block !important; }
-[data-irt-hide-origin] > .irt-translation.irt-inline { display: inline !important; margin-left: 0 !important; }
+[data-irt-hide-origin] { font-size: 0 !important; line-height: 0 !important; }
+[data-irt-hide-origin]::marker { font-size: var(--irt-origin-fs, 1rem); }
+[data-irt-hide-origin] > .irt-translation { font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important; line-height: var(--irt-origin-lh, normal) !important; display: inline !important; margin: 0 !important; }
 .irt-flex-host { flex-wrap: wrap !important; }
 .irt-flex-host > .irt-translation:not(.irt-inline) { flex: 1 0 100% !important; grid-column: 1 / -1 !important; }
 .irt-pending { opacity: .82; }
 [data-irt-state='error'] { outline: 1px dotted rgba(220,70,70,.45); outline-offset: 2px; }
 .irt-translation.irt-retry { display: inline-flex !important; align-items: center; gap: 4px; margin: .2em 0 .3em !important; padding: 2px 9px; font: 500 max(11px,.74em)/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif; color: #d9433c !important; background: rgba(217,67,60,.09) !important; border: 1px solid rgba(217,67,60,.32) !important; border-radius: 6px; cursor: pointer; user-select: none; }
 .irt-translation.irt-retry::before { content: '\\21bb'; font-size: 1.1em; line-height: 1; }
-.irt-trans-actions { display: inline-flex; gap: 3px; margin-left: .45em; vertical-align: middle; opacity: 0; transition: opacity .15s; user-select: none; }
+.irt-trans-actions { position: absolute; display: inline-flex; gap: 3px; margin-left: .45em; vertical-align: middle; opacity: 0; transition: opacity .15s; user-select: none; }
 .irt-translation:hover > .irt-trans-actions, .irt-translation:focus-within > .irt-trans-actions { opacity: 1; }
 .irt-trans-actions .irt-act { all: unset; cursor: pointer; font: 12px/1 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif; padding: 3px 6px; border-radius: 5px; color: #7d8794; background: rgba(128,128,128,.15); }
 .irt-trans-actions .irt-act:hover { background: rgba(56,132,255,.18); color: #3884ff; }
@@ -174,13 +174,17 @@
   // 页面框架（导航、顶栏、页脚、按钮、菜单）：整页翻译时跳过整棵子树。
   // 沉浸式翻译也是这么做的 —— 这些文字用户早就认识，翻了只会把每个导航项、
   // 按钮撑高一截，页面立刻变乱。需要时仍可悬停单段翻译。
-  const CHROME_TAGS = new Set(['NAV', 'BUTTON']);
-  const CHROME_ROLES = new Set(['navigation', 'banner', 'contentinfo', 'menu', 'menubar',
-    'toolbar', 'tablist', 'button', 'search']);
+  // 按钮、菜单这类控件任何模式都不翻；导航、顶栏、页脚只在双语模式下跳过 ——
+  // 仅译文模式是就地替换文字、不增加行，翻了也不会撑乱布局（沉浸式翻译也会翻导航）。
+  const CONTROL_ROLES = new Set(['menu', 'menubar', 'toolbar', 'tablist', 'button', 'search']);
+  const FRAME_ROLES = new Set(['navigation', 'banner', 'contentinfo']);
+
+  const replaceMode = () => config?.mode === 'translation';
 
   function isPageChrome(el) {
-    if (CHROME_TAGS.has(el.tagName)) return true;
-    if (CHROME_ROLES.has(el.getAttribute('role'))) return true;
+    if (el.tagName === 'BUTTON' || CONTROL_ROLES.has(el.getAttribute('role'))) return true;
+    if (replaceMode()) return false;
+    if (el.tagName === 'NAV' || FRAME_ROLES.has(el.getAttribute('role'))) return true;
     // 文章自己的 <header>/<footer>（标题、署名）是正文的一部分，只跳过页面级的
     if (el.tagName === 'HEADER' || el.tagName === 'FOOTER') {
       return !el.parentElement?.closest('article, main, [role="main"], section');
@@ -191,8 +195,8 @@
   // 不值得整页翻译的零碎标签：非正文标签、不超过 3 个词、不成句。
   // "Public"、"User flair"、"Weekly visitors" 这类，翻了只添乱。
   function isTinyLabel(el, text) {
-    // 表单 label 是用户要填的东西，再短也翻
-    if (PROSE_TAGS.has(el.tagName) || el.tagName === 'LABEL') return false;
+    // 表单 label 是用户要填的东西，再短也翻；仅译文模式就地替换，短标签也翻
+    if (replaceMode() || PROSE_TAGS.has(el.tagName) || el.tagName === 'LABEL') return false;
     const s = text.replace(/\s+/g, ' ').trim();
     return s.split(' ').length <= 3 && !/[.!?。！？]$/.test(s);
   }
@@ -277,6 +281,8 @@
           text += child.nodeValue;
         } else if (child.nodeType === 1) {
           if (isSkippedNode(child)) continue;
+          // 按钮/菜单等控件的文字不能并进父元素的句子里（否则父元素会把它带去翻译）
+          if (isPageChrome(child)) continue;
           if (isContents(child)) {
             visit(child);
             // contents 元素也可能是 shadow host（自定义元素常常两样都占）
@@ -403,8 +409,8 @@
           const i = idx++;
           holders.push(child);
           const inner = visibleTextOf(child);
-          // 公式/角标作为空占位原样带过去：位置保留，内容不送翻译
-          if (isSkippedNode(child)) {
+          // 公式/角标、控件作为空占位原样带过去：位置保留，内容不送翻译
+          if (isSkippedNode(child) || isPageChrome(child)) {
             holders.verbatim.add(i);
             parts.push(`<b${i}></b${i}>`);
             continue;
@@ -482,6 +488,8 @@
       const cs = getComputedStyle(el);
       el.__irtFontSize = cs.fontSize;
       el.__irtLineHeight = cs.lineHeight;
+      // 记在原元素上：仅译文模式下列表序号（::marker）也要用回原字号
+      el.style.setProperty('--irt-origin-fs', cs.fontSize);
     }
     const node = document.createElement(inlineUnit ? 'span' : 'div');
     node.className = `${MARK} irt-style-${config.displayStyle}`;
@@ -779,6 +787,8 @@
     el.removeAttribute(UNIT_ATTR);
     el.removeAttribute('data-irt-hide-origin');
     el.classList.remove('irt-pending', 'irt-flex-host');
+    el.style.removeProperty('--irt-origin-fs');
+    if (el.getAttribute('style') === '') el.removeAttribute('style');
     delete el.__irtHolders;
     delete el.__irtSourceHtml;
   }
@@ -916,6 +926,8 @@
         n.removeAttribute(STATE_ATTR);
         n.removeAttribute('data-irt-hide-origin');
         n.classList.remove('irt-pending', 'irt-flex-host');
+        n.style.removeProperty('--irt-origin-fs');
+        if (n.getAttribute('style') === '') n.removeAttribute('style');
         delete n.__irtHolders;
         delete n.__irtSourceHtml;
       });
