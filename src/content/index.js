@@ -146,25 +146,22 @@
       if (el.classList?.contains(MARK)) return;
       if (el.isContentEditable) return;
       if (el.closest('[data-irt-ignore]')) return;
+
+      // display:contents 的元素自己不成盒：既不能当单元（没有盒子承载译文），
+      // 也不能因为 rect 是 0×0 就整棵跳过 —— 它的内容其实显示在父级的布局里。
+      // 只能"穿过"它，继续看它的子节点（含 shadow root）。
+      if (isContents(el)) {
+        for (const child of el.children) walk(child, depth + 1);
+        if (el.shadowRoot) for (const child of el.shadowRoot.children || []) walk(child, depth + 1);
+        return;
+      }
       if (!isVisible(el)) return;
 
       const blockChildren = [];
       let ownText = '';
-      for (const child of el.childNodes) {
-        if (child.nodeType === 3) {
-          ownText += child.nodeValue;
-        } else if (child.nodeType === 1) {
-          if (isSkippedNode(child)) continue;
-          if (isBlockish(child)) {
-            blockChildren.push(child);
-          } else {
-            ownText += visibleTextOf(child);
-            // 内联元素也可能带 shadow root（自定义元素默认就是 inline 排布）。
-            // 只把它当内联文本会吹掉它内部的所有内容，这里补一次递归。
-            if (child.shadowRoot) blockChildren.push(child);
-          }
-        }
-      }
+      const { text, blocks } = splitChildren(el);
+      ownText += text;
+      blockChildren.push(...blocks);
 
       // 自身的裸文本（含内联子孙）有实质内容 → 本元素是一个单元。
       // 但仍要递归块级子元素：父元素有一行说明文字、下面跟着一个列表，
@@ -181,6 +178,59 @@
     };
     walk(root, 0);
     return units;
+  }
+
+  // 把一个元素的子节点分成「属于本单元的文字」和「该单独成单元的块级子元素」。
+  // display:contents 的子节点实际参与本元素的排布，要先摊平再判断，否则整块 UI
+  // （Reddit 的右侧栏、整个帖子）会被 visibleTextOf 一路收进来，塌成一个巨型单元。
+  function splitChildren(el) {
+    let text = '';
+    const blocks = [];
+    const visit = (node) => {
+      for (const child of node.childNodes) {
+        if (child.nodeType === 3) {
+          text += child.nodeValue;
+        } else if (child.nodeType === 1) {
+          if (isSkippedNode(child)) continue;
+          if (isContents(child)) {
+            visit(child);
+            // contents 元素也可能是 shadow host（自定义元素常常两样都占）
+            if (child.shadowRoot) blocks.push(child);
+            continue;
+          }
+          if (isBlockish(child)) {
+            blocks.push(child);
+          } else if (hasBlockDescendant(child)) {
+            // 内联排布、内部却装着块级内容（自定义元素很常见，比如 display:inline
+            // 的整块导航）：这是容器不是一行文字，交出去单独成单元。
+            blocks.push(child);
+          } else {
+            text += visibleTextOf(child);
+            // 内联元素也可能带 shadow root（自定义元素默认就是 inline 排布）。
+            // 只把它当内联文本会吹掉它内部的所有内容，这里补一次递归。
+            if (child.shadowRoot) blocks.push(child);
+          }
+        }
+      }
+    };
+    visit(el);
+    return { text, blocks };
+  }
+
+  // 内联排布的元素里是否装着块级内容（穿过 contents 元素继续看）。
+  // 深度封顶避免在深树上反复遍历，真实页面里两三层就能判出来。
+  function hasBlockDescendant(el, depth = 6) {
+    if (depth <= 0) return false;
+    for (const child of el.children) {
+      if (isSkippedNode(child)) continue;
+      if (isBlockish(child)) return true;
+      if (hasBlockDescendant(child, depth - 1)) return true;
+    }
+    return false;
+  }
+
+  function isContents(el) {
+    return displayOf(el) === 'contents';
   }
 
   // 元素是否以块级方式排布（决定是否拆成独立单元）。
