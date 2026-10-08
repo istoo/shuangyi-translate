@@ -50,7 +50,10 @@ window.chrome = {
       else if (msg.type === 'translate') {
         sentTexts.push(...msg.texts);
         res = { ok: true, data: msg.texts.map((x) => '【译】' + x.replace(/<\/?b\d+>/g, '')) };
-      } else if (msg.type === 'setConfig') res = { ok: true, data: cfg };
+      } else if (msg.type === 'setConfig') {
+        Object.assign(cfg, msg.patch);
+        res = { ok: true, data: cfg };
+      }
       cb && cb(res);
       return Promise.resolve(res);
     },
@@ -93,6 +96,20 @@ check('两个 shadow host 都有译文',
   !!sr1.querySelector('.irt-translation') && !!sr2.querySelector('.irt-translation'));
 check('译文没有跑到宿主外层的 light DOM 里',
   doc.getElementById('w1').querySelectorAll(':scope > .irt-translation').length === 0);
+check('shadow root 自带译文与操作条样式', !!sr1.querySelector('style[data-irt-shadow-style]'));
+check('同一个 shadow root 只注入一份样式', sr1.querySelectorAll('style[data-irt-shadow-style]').length === 1);
+// jsdom 不计算 shadow root 内样式，这里校验注入的规则本身
+check('shadow 里的操作条默认隐藏',
+  /\.irt-trans-actions\s*\{[^}]*opacity:\s*0/.test(sr1.querySelector('style[data-irt-shadow-style]')?.textContent || ''));
+
+await send({ type: 'toggleMode' });
+await sleep(50);
+check('切到仅译文时 shadow 里的单元也隐藏原文',
+  !!sr1.querySelector('[data-irt-hide-origin]'));
+await send({ type: 'toggleMode' });
+await sleep(50);
+check('切回双语时 shadow 里的原文恢复',
+  !sr1.querySelector('[data-irt-hide-origin]'));
 
 await send({ type: 'restorePage' });
 await sleep(300);
@@ -103,6 +120,7 @@ check('还原时 shadow root 里的译文被清理',
 check('还原时 shadow 里的单元标记也被清理',
   sr1.querySelectorAll('[data-irt-unit]').length === 0,
   String(sr1.querySelectorAll('[data-irt-unit]').length));
+check('还原时 shadow 样式也被清理', !sr1.querySelector('style[data-irt-shadow-style]'));
 check('还原后 shadow 里的原文完好',
   /inside a shadow root/.test(sr1.textContent || ''), (sr1.textContent || '').slice(0, 50));
 

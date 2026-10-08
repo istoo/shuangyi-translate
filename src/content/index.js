@@ -12,6 +12,33 @@
   const MARK = 'irt-translation';           // 译文节点标记类
   const UNIT_ATTR = 'data-irt-unit';        // 已识别的翻译单元
   const STATE_ATTR = 'data-irt-state';      // pending | done | error
+  const SHADOW_STYLE_ATTR = 'data-irt-shadow-style';
+
+  // manifest 注入的 styles.css 只作用于主文档，进不了 shadow root。
+  // 译文、悬停操作条和重试入口一旦插进 web component 内部，就会退回浏览器默认样式：
+  // Reddit 上的 ⧉ ✎ ↻ 按钮会常驻显示并挡住按钮文字。这里给 shadow root 补最小样式。
+  const SHADOW_CSS = `
+.irt-translation { display: block; margin: .25em 0 .35em; color: inherit; font-size: calc(1em * var(--irt-font-scale, 1)); line-height: 1.6; text-align: inherit; unicode-bidi: isolate; }
+.irt-translation.irt-inline { display: inline; margin: 0 0 0 .35em; }
+.irt-style-dashed { border-bottom: 1px dashed rgba(125,125,125,.55); padding-bottom: .15em; }
+.irt-style-underline { text-decoration: underline; text-decoration-color: rgba(56,132,255,.5); text-underline-offset: 3px; }
+.irt-style-highlight { background: rgba(255,213,79,.22); border-radius: 3px; padding: .05em .25em; }
+.irt-style-blockquote { border-left: 3px solid rgba(56,132,255,.55); padding-left: .65em; }
+[data-irt-hide-origin] > *:not(.irt-translation), [data-irt-hide-origin]::before { display: none !important; }
+[data-irt-hide-origin] { font-size: 0 !important; }
+[data-irt-hide-origin] > .irt-translation { font-size: calc(1rem * var(--irt-font-scale, 1)) !important; display: block !important; }
+.irt-pending { opacity: .82; }
+[data-irt-state='error'] { outline: 1px dotted rgba(220,70,70,.45); outline-offset: 2px; }
+.irt-translation.irt-retry { display: inline-flex !important; align-items: center; gap: 4px; margin: .2em 0 .3em !important; padding: 2px 9px; font: 500 max(11px,.74em)/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif; color: #d9433c !important; background: rgba(217,67,60,.09) !important; border: 1px solid rgba(217,67,60,.32) !important; border-radius: 6px; cursor: pointer; user-select: none; }
+.irt-translation.irt-retry::before { content: '\\21bb'; font-size: 1.1em; line-height: 1; }
+.irt-trans-actions { display: inline-flex; gap: 3px; margin-left: .45em; vertical-align: middle; opacity: 0; transition: opacity .15s; user-select: none; }
+.irt-translation:hover > .irt-trans-actions, .irt-translation:focus-within > .irt-trans-actions { opacity: 1; }
+.irt-trans-actions .irt-act { all: unset; cursor: pointer; font: 12px/1 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif; padding: 3px 6px; border-radius: 5px; color: #7d8794; background: rgba(128,128,128,.15); }
+.irt-trans-actions .irt-act:hover { background: rgba(56,132,255,.18); color: #3884ff; }
+.irt-trans-actions .irt-act:focus-visible { outline: 2px solid rgba(56,132,255,.5); outline-offset: 1px; }
+.irt-translation.irt-trans-editing { outline: 2px solid rgba(56,132,255,.45); outline-offset: 3px; border-radius: 3px; cursor: text; }
+.irt-translation.irt-trans-busy { opacity: .45; }
+`;
 
   // 这些标签内的文本不翻译
   const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'CODE', 'PRE', 'KBD', 'SAMP', 'VAR',
@@ -233,6 +260,16 @@
     return displayOf(el) === 'contents';
   }
 
+  function ensureShadowStyle(el) {
+    const root = el.getRootNode?.();
+    if (!root || root === document || !root.host || root.querySelector?.(`style[${SHADOW_STYLE_ATTR}]`)) return;
+    const style = document.createElement('style');
+    style.setAttribute(SHADOW_STYLE_ATTR, '');
+    style.setAttribute('data-irt-ignore', '');
+    style.textContent = SHADOW_CSS;
+    root.appendChild(style);
+  }
+
   // 元素是否以块级方式排布（决定是否拆成独立单元）。
   // 先看标签语义再看 CSS：computed style 在部分环境下拿不到可靠值，
   // 只靠它会让整篇文章塌成一个单元。
@@ -388,6 +425,7 @@
     // 行内元素的译文跟在后面并加分隔；块级元素另起一行
     if (inlineUnit) node.classList.add('irt-inline');
     node.appendChild(buildActions(el));
+    ensureShadowStyle(el);
     el.appendChild(node);
     markState(el, 'done');
   }
@@ -542,6 +580,7 @@
     btn.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') activate(e);
     });
+    ensureShadowStyle(el);
     el.appendChild(btn);
   }
 
@@ -794,6 +833,7 @@
     // 译文可能插在 shadow root 里，document.querySelectorAll 够不到，要逐根清理
     for (const root of collectRoots(document)) {
       root.querySelectorAll(`.${MARK}`).forEach((n) => n.remove());
+      root.querySelectorAll(`style[${SHADOW_STYLE_ATTR}]`).forEach((n) => n.remove());
       root.querySelectorAll(`[${UNIT_ATTR}]`).forEach((n) => {
         n.removeAttribute(UNIT_ATTR);
         n.removeAttribute(STATE_ATTR);
@@ -818,10 +858,12 @@
     await send({ type: 'setConfig', patch: { mode: config.mode } });
     if (pageTranslated) {
       document.documentElement.setAttribute('data-irt-on', config.mode);
-      document.querySelectorAll(`[${UNIT_ATTR}][${STATE_ATTR}="done"]`).forEach((el) => {
-        if (config.mode === 'translation') el.setAttribute('data-irt-hide-origin', '');
-        else el.removeAttribute('data-irt-hide-origin');
-      });
+      for (const root of collectRoots(document)) {
+        root.querySelectorAll(`[${UNIT_ATTR}][${STATE_ATTR}="done"]`).forEach((el) => {
+          if (config.mode === 'translation') el.setAttribute('data-irt-hide-origin', '');
+          else el.removeAttribute('data-irt-hide-origin');
+        });
+      }
     }
     toast(t(config.mode === 'bilingual' ? 'csModeBilingual' : 'csModeTranslation'), 'info');
   }
