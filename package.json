@@ -1,6 +1,6 @@
 {
   "name": "shuangyi-translate",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "private": true,
   "description": "双译 — Chrome 双语对照网页翻译扩展（开发/测试用，扩展本身无需构建）。可接入任意大模型：OpenAI 兼容、Claude、Gemini、Ollama、自定义 HTTP 接口。",
   "type": "module",
@@ -15,6 +15,6 @@
     "jsdom": "^24.0.0",
     "ws": "^8.16.0"
   },
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-only",
   "author": "徐超"
 }

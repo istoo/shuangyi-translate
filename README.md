@@ -1,5 +1,8 @@
 # 双译 · Shuangyi
 
+[![test](https://github.com/istoo/shuangyi-translate/actions/workflows/test.yml/badge.svg)](https://github.com/istoo/shuangyi-translate/actions/workflows/test.yml)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+
 **双语对照网页翻译扩展 —— 翻译模型由你自己选。**
 
 A Chrome extension that turns any web page, video or PDF into a bilingual read. Unlike
@@ -7,7 +10,7 @@ translation extensions tied to one vendor, Shuangyi lets you bring your own mode
 profiles (OpenAI-compatible, Anthropic, Gemini, Ollama, or any custom HTTP endpoint) and
 switch between them at will.
 
-[English summary](#english-summary) · [安装](#安装) · [配置模型](#配置模型) · [开发](#开发)
+[English summary](#english-summary) · [安装](#安装) · [配置模型](#配置模型) · [开发](#开发) · [参与开发](CONTRIBUTING.md)
 
 ---
 
@@ -197,9 +200,13 @@ _locales/       语言包（zh_CN / en）
 
 ## 许可
 
-本项目以 [Apache License 2.0](LICENSE) 开源，可自由使用、修改、分发，也可以商用，包括用于闭源产品。许可证里包含明确的专利授权：贡献者授予你使用其专利的许可，若有人就本项目发起专利诉讼，这项授权即终止。
+本项目以 [GNU Affero 通用公共许可证第 3 版](LICENSE)（AGPL-3.0）开源。你可以自由使用、修改、分发，也可以收费，但衍生作品必须沿用同一许可证并公开源代码：
 
-分发时请保留版权声明、`LICENSE` 全文与 [`NOTICE`](NOTICE) 归属声明；修改过的文件请标注改动。许可证不授予商标权，「双译」名称与图标只用于官方版本。
+- 分发本软件或其修改版时，必须向接收者提供完整源代码与许可证全文。
+- 把修改版作为网络服务提供给别人使用时，也要向这些用户提供源代码（AGPL 第 13 条），也就是改一改就拿去当在线服务同样要开源。
+- 不得把本项目的代码用于闭源产品。
+
+许可证包含专利授权，也不授予商标权：「双译」名称与图标只用于官方版本。第三方组件的归属声明见 [`NOTICE`](NOTICE)。
 
 打包进来的 [pdf.js](src/vendor/pdfjs/) 来自 Mozilla，许可证为 Apache-2.0，详见 `src/vendor/pdfjs/LICENSE`（该许可证要求保留，与项目本身的授权无关）。
 
@@ -221,4 +228,4 @@ npm install && npm test    # offline test suite, no browser needed
 npm run pack               # build dist/*.zip and *.crx
 ```
 
-Licensed under the Apache License 2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Licensed under the GNU Affero General Public License v3.0; see [LICENSE](LICENSE).
