@@ -392,16 +392,35 @@ async function runTest() {
   out.textContent = t('testRunning');
   const sample = 'Immersive translation makes reading foreign articles effortless.';
   // 用当前编辑中的草稿测试，不必先等自动保存
+  const provider = currentProvider();
   const res = await chrome.runtime.sendMessage({
-    type: 'translate', texts: [sample], to: config.targetLang, provider: currentProvider(),
+    type: 'translate', texts: [sample], to: config.targetLang, provider,
   });
+  // 密钥是密码框，用户看不见自己粘进去的到底是什么。测试时把它「实际在用哪一个」写出来，
+  // 否则接口回 401 时用户只会觉得「明明填了还说我密钥错」。
+  const keyInfo = keyDiagnostics(provider);
   if (res?.ok) {
     out.className = 'test-out ok';
-    out.textContent = t('testSource') + sample + '\n' + t('testResult') + res.data[0];
+    out.textContent = [keyInfo, t('testSource') + sample + '\n' + t('testResult') + res.data[0]]
+      .filter(Boolean).join('\n');
   } else {
     out.className = 'test-out fail';
-    out.textContent = t('testFailed') + (res?.error || t('testUnknownError'));
+    out.textContent = [keyInfo, t('testFailed') + (res?.error || t('testUnknownError'))]
+      .filter(Boolean).join('\n');
   }
+}
+
+// 密钥一长串，用户没法核对。这里只露头尾，够用来发现「填错了另一个服务的密钥」
+// 和「复制时带进了空白」这两类最常见的 401。
+function keyDiagnostics(provider) {
+  const key = String(provider?.apiKey || '');
+  if (!key.trim()) return '';
+  const stripped = key.trim();
+  const masked = stripped.length <= 12 ? stripped : `${stripped.slice(0, 6)}…${stripped.slice(-4)}`;
+  const lines = [t('testKeyUsing', masked, String(stripped.length))];
+  // 中间夹了空格/零宽字符：首尾的空白后台会自动去掉，中间的没法替用户猜，只能提醒
+  if (/[\s\u200b-\u200f\ufeff]/.test(stripped)) lines.push(t('testKeyWhitespace'));
+  return lines.join('\n');
 }
 
 // ---------- 站点规则 ----------

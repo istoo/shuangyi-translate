@@ -231,6 +231,28 @@ await checkAsync('测试按钮用当前编辑中的草稿，而不是已保存�
   assert.ok($('testOut').classList.contains('ok'));
 });
 
+await checkAsync('测试结果里写出实际在用的密钥（露头尾与位数）', async () => {
+  const key = fieldInput('API Key');
+  const secret = 'sk-1234567890abcdefghij';
+  key.value = secret;
+  fire(key, 'input');
+  $('testBtn').click();
+  await tick(80);
+  const text = $('testOut').textContent;
+  assert.ok(text.includes('sk-123…ghij'), `应显示密钥头尾：${text}`);
+  assert.ok(text.includes(String(secret.length)), `应显示密钥位数：${text}`);
+  assert.ok(!text.includes(secret), '不能把完整密钥显示出来');
+});
+
+await checkAsync('密钥中间夹了空格时给出提醒', async () => {
+  const key = fieldInput('API Key');
+  key.value = 'sk-1234 5678';
+  fire(key, 'input');
+  $('testBtn').click();
+  await tick(80);
+  assert.ok($('testOut').textContent.includes('空白字符'), $('testOut').textContent);
+});
+
 await checkAsync('测试失败时把后台的错误原样显示出来', async () => {
   const originalSend = chromeMock.runtime.sendMessage;
   chromeMock.runtime.sendMessage = async (msg) => (msg.type === 'translate'

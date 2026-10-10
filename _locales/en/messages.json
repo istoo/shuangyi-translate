@@ -281,6 +281,12 @@
   "testUnknownError": {
     "message": "Unknown error"
   },
+  "testKeyUsing": {
+    "message": "Key in use: {0} ({1} characters)"
+  },
+  "testKeyWhitespace": {
+    "message": "⚠️ The key contains whitespace. Leading and trailing whitespace is trimmed automatically, but spaces inside the key make it invalid — copy the key again."
+  },
   "secSites": {
     "message": "Site rules"
   },

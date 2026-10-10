@@ -281,6 +281,12 @@
   "testUnknownError": {
     "message": "未知错误"
   },
+  "testKeyUsing": {
+    "message": "本次使用的密钥：{0}（共 {1} 位）"
+  },
+  "testKeyWhitespace": {
+    "message": "⚠️ 密钥里含空白字符：首尾空白已自动去掉，但中间的空格会被接口当成无效密钥，建议重新复制粘贴一次。"
+  },
   "secSites": {
     "message": "网站规则"
   },
