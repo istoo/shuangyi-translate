@@ -27,10 +27,10 @@
 
 ## 三、提交到 Microsoft Edge Addons
 
-Edge 与 Chrome 共用同一个 MV3 包（manifest 无需改动）：
+Edge 与 Chrome 共用同一个 MV3 包（manifest 无需改动）。逐字段的填写清单、所需资产与已知风险见 `store/EDGE.md`：
 
 1. Partner Center → 「新建扩展」→ 上传同一个 zip。
-2. 商店信息与截图复用 `store/description.md` 与 `store/screenshots/`。
+2. 商店信息与截图复用 `store/description.md`、`store/screenshots/` 与 `store/edge-store-logo-300.png`。
 3. 提交审核。
 
 ## 四、每次发版的固定流程
