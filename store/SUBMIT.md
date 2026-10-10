@@ -7,14 +7,10 @@
 1. **注册开发者账号**
    - Chrome Web Store：<https://chrome.google.com/webstore/devconsole> ，一次性 5 美元注册费。
    - Microsoft Partner Center：<https://partner.microsoft.com/dashboard/microsoftedge/> ，注册免费。
-2. **隐私政策需要一个可公开访问的网址**：<https://aineox.com/privacy.html> 。
-   - 站点用 GitHub Pages，源文件在 `docs/`，自定义域写在 `docs/CNAME`。
-   - DNS 记录（域名商处配置）：
-     - `A` 记录（根域名）：`185.199.108.153`、`185.199.109.153`、`185.199.110.153`、`185.199.111.153`
-     - `AAAA` 记录（可选，推荐）：`2606:50c0:8000::153`、`2606:50c0:8001::153`、`2606:50c0:8002::153`、`2606:50c0:8003::153`
-     - `CNAME` 记录：主机名 `www` → `istoo.github.io`（让 www 也能访问）
-   - 证书由 GitHub 自动申请，签发后再在 Pages 设置里勾选「强制 HTTPS」。
-   - 换域名或换托管时，要同步改这里、`store/privacy-policy.md`、`store/description.md`、`docs/CNAME` 与 issue 模板里的链接。
+2. **隐私政策需要一个可公开访问的网址**：<https://istoo.github.io/shuangyi-translate/privacy.html> 。
+   - 站点用 GitHub Pages（源分支 `main`，目录 `/docs`），源文件在 `docs/`。
+   - 如果以后要绑自定义域：在仓库里加 `docs/CNAME`（内容为域名），并在 Pages 设置里填同一个域名，然后在域名商处把根域名的 A 记录指向 `185.199.108.153`、`185.199.109.153`、`185.199.110.153`、`185.199.111.153`，`www` 用 CNAME 指向 `istoo.github.io`。证书由 GitHub 自动签发。
+   - 换域名或换托管时，要同步改这里、`store/privacy-policy.md`、`store/description.md` 与 issue 模板里的链接。
 3. **打包产物**：`npm run pack` 会生成 `dist/shuangyi-translate-<版本>.zip`。商店上传的就是这个 zip。
 4. **素材**：`store/description.md`（商店文案）、`store/permissions.md`（权限说明）、`store/review-qa.md`（审核问答）、`store/screenshots/`（截图 1280×800，商店要求 1 到 5 张）。
 

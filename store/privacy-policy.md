@@ -1,6 +1,6 @@
 # 双译 隐私政策
 
-公开地址：<https://aineox.com/privacy.html>
+公开地址：<https://istoo.github.io/shuangyi-translate/privacy.html>
 （`docs/privacy.html` 是这个文件的可发布版本，改内容时两处要一起改。）
 
 最后更新：2026 年 10 月 10 日
