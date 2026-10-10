@@ -10,7 +10,7 @@ translation extensions tied to one vendor, Shuangyi lets you bring your own mode
 profiles (OpenAI-compatible, Anthropic, Gemini, Ollama, or any custom HTTP endpoint) and
 switch between them at will.
 
-[主页](https://istoo.github.io/shuangyi-translate/) · [English summary](#english-summary) · [安装](#安装) · [配置模型](#配置模型) · [开发](#开发) · [参与开发](CONTRIBUTING.md) · [更新日志](CHANGELOG.md) · [隐私政策](https://istoo.github.io/shuangyi-translate/privacy.html)
+[官网](https://aineox.com/) · [English summary](#english-summary) · [安装](#安装) · [配置模型](#配置模型) · [开发](#开发) · [参与开发](CONTRIBUTING.md) · [更新日志](CHANGELOG.md) · [隐私政策](https://aineox.com/privacy.html)
 
 ---
 
