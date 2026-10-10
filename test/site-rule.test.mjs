@@ -135,6 +135,27 @@ await sleep(300);
 check('换目标语言后重新发请求', translateCalls.length > 0);
 check('换语言后译文还在（不是空页）', transCount() >= 2, `${transCount()} 段`);
 
+// ---------- 6. 弹窗里切换双语/仅译文也走 configChanged ----------
+console.log('\n=== 切换显示模式（走 configChanged） ===');
+translateCalls.length = 0;
+cfg.mode = 'translation';
+await ask({ type: 'configChanged' });
+await sleep(200);
+check('切到仅译文：html 标记为 translation',
+  doc.documentElement.getAttribute('data-irt-on') === 'translation',
+  String(doc.documentElement.getAttribute('data-irt-on')));
+check('切到仅译文：原文被标记隐藏', doc.querySelectorAll('[data-irt-hide-origin]').length >= 2,
+  `${doc.querySelectorAll('[data-irt-hide-origin]').length} 个`);
+check('切到仅译文：译文仍在页面上', transCount() >= 2, `${transCount()} 段`);
+check('切模式不重译', translateCalls.length === 0, JSON.stringify(translateCalls.slice(0, 2)));
+
+cfg.mode = 'bilingual';
+await ask({ type: 'configChanged' });
+await sleep(200);
+check('切回双语：隐藏标记被清掉', doc.querySelectorAll('[data-irt-hide-origin]').length === 0,
+  `${doc.querySelectorAll('[data-irt-hide-origin]').length} 个`);
+check('切回双语：译文仍在', transCount() >= 2);
+
 console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);
 process.exit(fail ? 1 : 0);
 
