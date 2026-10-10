@@ -1,0 +1,58 @@
+name: 报告问题
+description: 翻译没生效、页面被弄乱、报错等
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先确认：扩展已更新到最新版，并在 `chrome://extensions` 重新加载过，页面也刷新过。
+
+        请不要粘贴 API Key，贴控制台日志前自己先检查一遍。
+  - type: input
+    id: version
+    attributes:
+      label: 扩展版本
+      description: 在 chrome://extensions 或设置页顶部可以看到
+      placeholder: 1.10.1
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: 浏览器与版本
+      placeholder: Chrome 141 / Edge 141
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: 使用的翻译服务
+      description: 例如 Google 免费、OpenAI 兼容（模型名）、DeepL、Ollama
+  - type: input
+    id: page
+    attributes:
+      label: 出问题的页面地址
+      description: 能公开访问的地址最好。涉及内网或私人页面时，写站点类型即可（例如公司 wiki）
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开 …
+        2. 按 Alt+A …
+        3. 看到 …
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: 期望结果与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 控制台报错（可选）
+      description: 页面右键 → 检查 → Console，把与扩展相关的行贴过来。贴之前先删掉 API Key。
+      render: text

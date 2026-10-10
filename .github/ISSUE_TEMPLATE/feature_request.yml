@@ -1,0 +1,21 @@
+name: 功能建议
+description: 想要的新功能或体验改进
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你遇到的问题
+      description: 描述场景比描述方案更有用，说明你现在是怎么绕过去的
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你希望它怎么做
+  - type: input
+    id: sites
+    attributes:
+      label: 相关站点或材料类型（可选）
+      placeholder: 例如 arXiv 论文页、YouTube 字幕、公司内网 wiki

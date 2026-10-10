@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>双译 隐私政策</title>
+<meta name="description" content="双译（Shuangyi）浏览器翻译扩展的隐私政策：处理哪些数据、保存在哪里、发送到哪里。" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<main>
+  <nav class="nav">
+    <a href="./">首页</a>
+    <a href="privacy.html">隐私政策</a>
+    <a href="https://github.com/istoo/shuangyi-translate">源码</a>
+    <a href="https://github.com/istoo/shuangyi-translate/issues">反馈问题</a>
+  </nav>
+
+  <h1>双译 隐私政策</h1>
+  <p class="meta">最后更新：2026 年 10 月 10 日</p>
+
+  <p>双译（以下简称「本扩展」）是一款浏览器翻译扩展。本政策说明本扩展处理哪些数据、发送到哪里、以及你如何控制它。</p>
+
+  <h2>一句话总结</h2>
+  <p>本扩展没有自己的服务器。设置和译文缓存保存在你的浏览器本地，翻译时把待翻译的文本直接发送到<strong>你自己配置的翻译服务接口</strong>。</p>
+
+  <h2>本扩展收集的数据</h2>
+  <p>本扩展不收集、不上传任何数据到开发者或任何第三方服务器。代码里没有开发者运营的后端服务，没有统计上报，没有崩溃收集，没有广告或用户画像。源码在 <a href="https://github.com/istoo/shuangyi-translate">GitHub</a> 公开，可以自行核对。</p>
+
+  <h2>本扩展在本地保存的数据</h2>
+  <p>以下数据保存在浏览器的本地存储中，不会离开你的设备，除非你主动导出：</p>
+  <ul>
+    <li>你的设置：目标语言、显示样式、交互偏好、站点规则（总是或从不翻译的域名）</li>
+    <li>你填写的翻译服务配置：接口地址、API Key、模型名、系统提示词、术语库</li>
+    <li>译文缓存：方便同一页面再次打开时不重复翻译，改模型、提示词或术语库后旧条目自动失效</li>
+    <li>你在页面上手动修改过的译文</li>
+  </ul>
+  <p>你可以在扩展设置页随时清空译文缓存或恢复默认设置，也可以在卸载扩展时一并删除全部数据。</p>
+
+  <h2>数据发送到哪里</h2>
+  <p>当你触发翻译时，本扩展会把当前页面中待翻译的文本片段发送到你自行配置的翻译服务。接收方取决于你的配置：</p>
+  <ul>
+    <li>使用 Google 免费翻译时，文本发送到 <code>translate.googleapis.com</code></li>
+    <li>使用 DeepL 时，文本发送到 DeepL 的 API</li>
+    <li>使用 OpenAI 兼容接口、Anthropic、Gemini 或其他服务时，文本发送到你填写的那个接口地址</li>
+    <li>使用 Ollama 或自建服务时，文本只在你自己的机器或局域网内传输</li>
+  </ul>
+  <p>这些服务的隐私做法由它们各自的隐私政策约束，与本扩展无关，请只配置你信任的翻译服务。除翻译请求外，本扩展不会把数据发送到任何其他地方。</p>
+
+  <h2>本扩展申请的权限及用途</h2>
+  <table>
+    <tr><th>权限</th><th>用途</th></tr>
+    <tr><td><code>storage</code></td><td>在本地保存你的设置、服务配置与译文缓存</td></tr>
+    <tr><td><code>contextMenus</code></td><td>提供「翻译此页面」「总是或从不翻译此网站」等右键菜单项</td></tr>
+    <tr><td><code>scripting</code></td><td>仅在你打开「翻译封闭的 Shadow DOM 内容」这一开关后，注册一条用于支持 closed shadow root 的页面脚本。默认关闭</td></tr>
+    <tr><td>访问所有网站</td><td>在网页上识别段落并注入译文。翻译工具必须能读取你正在浏览的页面</td></tr>
+  </table>
+  <p>本扩展不读取与翻译无关的页面内容，不记录浏览历史。母语页面会自动跳过，除非你为该站点单独设置了规则。</p>
+
+  <h2>关于 API Key</h2>
+  <p>你填写的 API Key 保存在浏览器本地，仅用于向你配置的那个接口发起请求。本扩展不会把 Key 发送到其他任何地方。</p>
+
+  <h2>儿童隐私</h2>
+  <p>本扩展不面向儿童，也不收集任何个人信息。</p>
+
+  <h2>政策变更</h2>
+  <p>若本政策有变更，会随扩展版本更新一并发布，并更新本页顶部的日期。</p>
+
+  <h2>联系方式</h2>
+  <p>有疑问请到 <a href="https://github.com/istoo/shuangyi-translate/issues">GitHub Issues</a> 提交。</p>
+
+  <footer>
+    <p>双译 · Shuangyi — <a href="https://github.com/istoo/shuangyi-translate">github.com/istoo/shuangyi-translate</a></p>
+  </footer>
+</main>
+</body>
+</html>
