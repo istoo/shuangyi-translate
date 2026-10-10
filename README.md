@@ -197,9 +197,9 @@ _locales/       语言包（zh_CN / en）
 
 ## 许可
 
-本项目以 [MIT 许可证](LICENSE) 开源，可自由使用、修改、分发，也可以商用。分发时请保留版权声明与许可证全文，详见 `LICENSE`。
+本项目以 [Apache License 2.0](LICENSE) 开源，可自由使用、修改、分发，也可以商用，包括用于闭源产品。许可证里包含明确的专利授权：贡献者授予你使用其专利的许可，若有人就本项目发起专利诉讼，这项授权即终止。
 
-如果你想用一个专利条款更明确的许可证（例如为了让公司采购更容易过审），可以换成 Apache-2.0；如果希望衍生版本也必须开源，则换成 GPL-3.0 或 AGPL-3.0。换许可证只需要替换 `LICENSE` 全文和 `package.json` / README 里的许可证名称。
+分发时请保留版权声明、`LICENSE` 全文与 [`NOTICE`](NOTICE) 归属声明；修改过的文件请标注改动。许可证不授予商标权，「双译」名称与图标只用于官方版本。
 
 打包进来的 [pdf.js](src/vendor/pdfjs/) 来自 Mozilla，许可证为 Apache-2.0，详见 `src/vendor/pdfjs/LICENSE`（该许可证要求保留，与项目本身的授权无关）。
 
@@ -221,4 +221,4 @@ npm install && npm test    # offline test suite, no browser needed
 npm run pack               # build dist/*.zip and *.crx
 ```
 
-MIT licensed; see [LICENSE](LICENSE).
+Licensed under the Apache License 2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
