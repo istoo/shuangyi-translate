@@ -195,9 +195,11 @@ _locales/       语言包（zh_CN / en）
 
 新增服务类型的完整流程：在 `PROVIDER_TYPES` 与 `TEMPLATE_PRESETS` 里加一项，补上对应的文案 key，`providers.test.mjs` 会自动校验新预设渲染出的请求体是合法 JSON、地址里没有未替换的占位符。
 
-## 授权
+## 许可
 
-本仓库为私有项目，**保留所有权利，未授权分发或再使用**。
+本项目以 [MIT 许可证](LICENSE) 开源，可自由使用、修改、分发，也可以商用。分发时请保留版权声明与许可证全文，详见 `LICENSE`。
+
+如果你想用一个专利条款更明确的许可证（例如为了让公司采购更容易过审），可以换成 Apache-2.0；如果希望衍生版本也必须开源，则换成 GPL-3.0 或 AGPL-3.0。换许可证只需要替换 `LICENSE` 全文和 `package.json` / README 里的许可证名称。
 
 打包进来的 [pdf.js](src/vendor/pdfjs/) 来自 Mozilla，许可证为 Apache-2.0，详见 `src/vendor/pdfjs/LICENSE`（该许可证要求保留，与项目本身的授权无关）。
 
@@ -219,4 +221,4 @@ npm install && npm test    # offline test suite, no browser needed
 npm run pack               # build dist/*.zip and *.crx
 ```
 
-Licensed under MIT.
+MIT licensed; see [LICENSE](LICENSE).

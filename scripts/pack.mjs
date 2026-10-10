@@ -16,7 +16,8 @@ const keysDir = join(ROOT, 'keys');
 const keyPath = join(keysDir, 'shuangyi-translate.pem');
 
 // _locales 必须在包里：manifest 的 name/description 走 __MSG__，缺了语言包商店里会显示成 __MSG_extName__
-const INCLUDED = ['manifest.json', 'icons', 'src', '_locales', 'README.md'];
+// LICENSE 一并分发：闭源软件的授权条款要随产物提供
+const INCLUDED = ['manifest.json', 'icons', 'src', '_locales', 'README.md', 'LICENSE'];
 
 // ---------- 校验 ----------
 const missing = INCLUDED.filter((f) => !existsSync(join(ROOT, f)));
