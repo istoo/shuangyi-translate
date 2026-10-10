@@ -56,7 +56,8 @@ function handle(msg) {
 }
 window.chrome.i18n = makeI18n();
 window.IntersectionObserver = class { constructor(cb){this.cb=cb;} observe(el){ setTimeout(()=>this.cb([{isIntersecting:true,target:el}],this),0);} unobserve(){} disconnect(){} };
-window.navigator.clipboard = { writeText: () => Promise.resolve() };
+const clipboard = [];
+window.navigator.clipboard = { writeText: (v) => { clipboard.push(v); return Promise.resolve(); } };
 
 window.eval(readFileSync('src/content/index.js', 'utf8'));
 await sleep(80);
@@ -94,6 +95,22 @@ check('划词后出现气泡', !!bubble);
 check('气泡内含译文', (bubble?.querySelector('.irt-bubble-body')?.textContent || '').includes('【译文】'),
   (bubble?.querySelector('.irt-bubble-body')?.textContent || '').slice(0, 30));
 check('气泡带 data-irt-ignore（不会被自身翻译）', bubble?.hasAttribute('data-irt-ignore'));
+
+// 气泡里的「复制」按钮。曾经的 bug：翻译结果的回调参数写成了 t，把 i18n 的 t() 函数
+// 遮住了，点一下就在页面里抛 TypeError，复制提示也永远不出现。
+clipboard.length = 0;
+let copyError = null;
+try {
+  bubble.querySelector('.irt-bubble-copy').onclick();
+} catch (e) {
+  copyError = e;
+}
+check('气泡复制按钮不抛错', !copyError, copyError ? copyError.message : '');
+check('气泡复制复制到了译文', clipboard.length === 1 && clipboard[0].includes('【译文】'),
+  JSON.stringify(clipboard));
+check('气泡复制给出提示', /已复制|Copied/.test(doc.querySelector('.irt-toast')?.textContent || ''),
+  doc.querySelector('.irt-toast')?.textContent || '(没有提示)');
+
 // Esc 关闭
 doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 await sleep(30);

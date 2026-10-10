@@ -1273,12 +1273,13 @@
 
     bubble.querySelector('.irt-bubble-close').onclick = hideBubble;
 
-    translateSelectionText(text).then((t) => {
+    // 回调参数不能叫 t：那会把上面的 i18n t() 函数遮住，复制提示就变成「t is not a function」
+    translateSelectionText(text).then((translated) => {
       if (!bubble) return;
       const body = bubble.querySelector('.irt-bubble-body');
-      body.textContent = t;
+      body.textContent = translated;
       bubble.querySelector('.irt-bubble-copy').onclick = () => {
-        navigator.clipboard?.writeText(t);
+        navigator.clipboard?.writeText(translated);
         toast(t('csCopied'), 'info');
       };
       positionBubble(rect);
