@@ -3,28 +3,14 @@
 import { getConfig, setConfig, ensureMigrated } from '../shared/config.js';
 import { resolveProvider, fingerprint } from '../shared/providers.js';
 import { translateTexts } from './engines.js';
+import { cacheGet, cacheSet, ready, clearTranslationCache } from './translation-cache.js';
 import { t } from '../shared/i18n.js';
 
-// 译文缓存：key = 服务档案指纹|to|文本，控制上限避免无限增长
-// 指纹涵盖模型、提示词、术语库等全部配置，改完设置旧译文自动失效
-const cache = new Map();
-const CACHE_MAX = 5000;
-
-function cacheGet(key) {
-  const v = cache.get(key);
-  if (v !== undefined) {
-    cache.delete(key);
-    cache.set(key, v); // LRU 提升
-  }
-  return v;
-}
-
-function cacheSet(key, val) {
-  if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value);
-  cache.set(key, val);
-}
+// 译文缓存的 key = 服务档案指纹|to|文本。指纹涵盖模型、提示词、术语库，改完设置旧译文自动失效。
+// 缓存本体在 translation-cache.js：内存 LRU，并落到 chrome.storage.local，Service Worker 重启后还在。
 
 async function handleTranslate({ texts, from, to, provider: draft, docTitle, context, noCache }) {
+  await ready();
   const config = await getConfig();
   const target = to || config.targetLang;
   const provider = draft || resolveProvider(config);
@@ -68,14 +54,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           sendResponse({ ok: true, data: await setConfig(msg.patch) });
           break;
         case 'clearCache':
-          cache.clear();
+          await clearTranslationCache();
           sendResponse({ ok: true });
           break;
         default:
           sendResponse({ ok: false, error: t('bgUnknownMessage', msg?.type) });
       }
     } catch (e) {
-      sendResponse({ ok: false, error: e?.message || String(e) });
+      sendResponse({ ok: false, error: e?.message || String(e), kind: e?.kind });
     }
   })();
   return true; // 保持异步通道
@@ -96,7 +82,38 @@ function buildMenus() {
   });
 }
 
+// ---- closed shadow root 支持 ----
+// 要在页面脚本之前改写 attachShadow，对所有页面都有副作用，所以默认关闭，
+// 用户在设置里打开后才动态注册这条 MAIN world 脚本。新注册的脚本只对之后加载的页面生效。
+const SHADOW_SCRIPT_ID = 'irt-open-shadow';
+
+async function syncShadowScript() {
+  if (!chrome.scripting?.registerContentScripts) return;
+  try {
+    const want = !!(await getConfig()).openClosedShadow;
+    const have = (await chrome.scripting.getRegisteredContentScripts({ ids: [SHADOW_SCRIPT_ID] })).length > 0;
+    if (want && !have) {
+      await chrome.scripting.registerContentScripts([{
+        id: SHADOW_SCRIPT_ID,
+        matches: ['<all_urls>'],
+        js: ['src/content/force-open-shadow.js'],
+        runAt: 'document_start',
+        world: 'MAIN',
+        allFrames: false,
+        persistAcrossSessions: true,
+      }]);
+    } else if (!want && have) {
+      await chrome.scripting.unregisterContentScripts({ ids: [SHADOW_SCRIPT_ID] });
+    }
+  } catch { /* 注册失败只是少了 closed shadow 支持，不影响翻译 */ }
+}
+
+chrome.storage.onChanged?.addListener((changes, area) => {
+  if (area === 'local' && changes.config) syncShadowScript();
+});
+
 chrome.runtime.onInstalled.addListener((details) => {
+  syncShadowScript();
   buildMenus();
   ensureMigrated(); // v1 的单份 openai/deepl 配置迁移为档案数组
   // 首次安装时开一个引导页：否则用户不会知道还有悬停、划词、快捷键这些用法
@@ -105,6 +122,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 chrome.runtime.onStartup?.addListener(() => {
+  syncShadowScript();
   buildMenus();
   ensureMigrated();
 });

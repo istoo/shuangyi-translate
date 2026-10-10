@@ -9,6 +9,8 @@ const HTML = `<!doctype html><html lang="en"><body>
 <input id="inp" type="text" />
 <div id="ce" contenteditable="true"></div>
 <p id="hoverP">A paragraph that should be translated only on hover.</p>
+<span id="brand">TurboQuant</span>
+<div id="tinyLabel">Weekly visitors</div>
 </body></html>`;
 
 let cfg = {
@@ -27,11 +29,21 @@ window.Element.prototype.getBoundingClientRect = function () {
 window.Range.prototype.getBoundingClientRect = () => ({ width:200,height:18,top:100,left:60,right:260,bottom:118,x:60,y:100 });
 
 let listener = null;
+let deferTranslate = false;
+const deferred = [];
 const translateCalls = [];
 window.chrome = { runtime: {
   lastError: null,
   onMessage: { addListener: fn => { listener = fn; } },
-  sendMessage: (msg, cb) => { const r = handle(msg); cb && cb(r); return Promise.resolve(r); },
+  sendMessage: (msg, cb) => {
+    // deferTranslate=true 时把响应推迟到手动放行：用来复现「等译文期间用户又改了输入框」
+    if (deferTranslate && msg.type === 'translate') {
+      return new Promise((resolve) => {
+        deferred.push(() => { const r = handle(msg); cb && cb(r); resolve(r); });
+      });
+    }
+    const r = handle(msg); cb && cb(r); return Promise.resolve(r);
+  },
 } };
 function handle(msg) {
   if (msg.type === 'getConfig') return { ok: true, data: JSON.parse(JSON.stringify(cfg)) };
@@ -56,6 +68,17 @@ const check = (n, c, e='') => { c ? pass++ : fail++; console.log(`${c?'✅':'❌
 console.log('=== 悬浮球 ===');
 check('悬浮球已注入', !!doc.querySelector('.irt-ball'));
 check('悬浮球在 html 下（不受 body 样式影响）', doc.documentElement.querySelector(':scope > .irt-ball') !== null);
+const ballEl = doc.querySelector('.irt-ball');
+check('悬浮球可被键盘聚焦（role/tabindex/aria-label）',
+  ballEl.getAttribute('role') === 'button' && ballEl.getAttribute('tabindex') === '0'
+  && !!ballEl.getAttribute('aria-label'));
+ballEl.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+await sleep(250);
+check('回车键能开关页面翻译', doc.documentElement.getAttribute('data-irt-on') !== null,
+  String(doc.documentElement.getAttribute('data-irt-on')));
+ballEl.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+await sleep(250);
+check('再按一次回车还原页面', doc.documentElement.getAttribute('data-irt-on') === null);
 
 console.log('\n=== 划词翻译 ===');
 // 模拟选中 #para 的部分文本
@@ -105,6 +128,22 @@ fireSpace(ce); fireSpace(ce); fireSpace(ce);
 await sleep(200);
 check('contenteditable 被翻译', (ce.innerText || '').startsWith('【译文】'), JSON.stringify((ce.innerText||'').slice(0,28)));
 
+// 等译文期间用户继续输入：不能把他的新内容覆盖掉
+{
+  deferTranslate = true;
+  deferred.length = 0;
+  const inp2 = doc.getElementById('inp');
+  inp2.value = 'First draft to translate';
+  fireSpace(inp2); fireSpace(inp2); fireSpace(inp2);
+  await sleep(120);
+  check('请求期间显示翻译中占位', /翻译中|\.\.\./.test(inp2.value), JSON.stringify(inp2.value.slice(0, 30)));
+  inp2.value = '用户在等结果时重新输入的内容';   // 模拟用户继续打字
+  while (deferred.length) deferred.shift()();
+  await sleep(200);
+  check('等待期间用户的新输入不被覆盖', inp2.value === '用户在等结果时重新输入的内容', JSON.stringify(inp2.value));
+  deferTranslate = false;
+}
+
 console.log('\n=== 悬停翻译 ===');
 const hp = doc.getElementById('hoverP');
 // 未按 Shift 时不翻译
@@ -117,6 +156,17 @@ hp.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true }));
 await sleep(250);
 check('按住 Shift 悬停触发翻译', !!hp.querySelector('.irt-translation'),
   (hp.querySelector('.irt-translation')?.textContent || '(无)').slice(0, 28));
+
+// 悬停也要走同一套噪音过滤：品牌名、型号、零碎标签不该被翻
+const brand = doc.getElementById('brand');
+const tiny = doc.getElementById('tinyLabel');
+brand.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true }));
+tiny.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true }));
+await sleep(250);
+check('悬停不翻品牌名/型号', !brand.querySelector('.irt-translation')
+  && !translateCalls.some((list) => list.some((t) => /TurboQuant/.test(t))));
+check('悬停不翻零碎标签', !tiny.querySelector('.irt-translation')
+  && !translateCalls.some((list) => list.some((t) => /Weekly visitors/.test(t))));
 
 console.log('\n=== 站点规则 ===');
 cfg.siteRules = { 'example.com': 'never' };

@@ -203,6 +203,20 @@ check('v1 配置迁移为档案数组并保留 Key / 模型 / 术语库', () => 
   assert.equal(deepl.pro, true);
 });
 
+check('版本号对不上但已有档案时，保留档案（不丢 Key）', () => {
+  const stored = {
+    version: 3, engine: 'mine', targetLang: 'ja',
+    providers: [{ id: 'mine', type: 'openai', name: '内部', apiKey: 'sk-keep', model: 'm1', url: 'https://x/v1' }],
+    someFutureField: true,
+  };
+  const out = migrateConfig(stored);
+  assert.equal(out.version, 2);
+  assert.equal(out.providers.length, 1);
+  assert.equal(out.providers[0].apiKey, 'sk-keep', '迁移把用户已存的 Key 丢掉了');
+  assert.equal(out.engine, 'mine');
+  assert.equal(out.someFutureField, true, '未知字段应原样保留');
+});
+
 check('迁移幂等：已是 v2 的配置原样返回', () => {
   const cfg = { version: CONFIG_VERSION, engine: 'google', providers: [{ id: 'google', type: 'google' }] };
   assert.equal(migrateConfig(cfg), cfg);

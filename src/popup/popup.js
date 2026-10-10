@@ -6,6 +6,7 @@ const $ = (id) => document.getElementById(id);
 let config = null;
 let tab = null;
 let translated = false;
+let pageOk = false;   // 内容脚本是否在这个页面里（拿不到时不能把占位文案当域名写进站点规则）
 
 const sendBg = (msg) => chrome.runtime.sendMessage(msg);
 const sendTab = (msg) => chrome.tabs.sendMessage(tab.id, msg).catch(() => null);
@@ -36,6 +37,7 @@ async function init() {
   paintSeg('modeSeg', 'mode', config.mode);
 
   const state = await sendTab({ type: 'getState' });
+  pageOk = !!state?.ok;
   if (state?.ok) {
     translated = state.translated;
     $('host').textContent = state.host;
@@ -96,15 +98,14 @@ function bind() {
   $('siteSeg').onclick = async (e) => {
     const rule = e.target.dataset?.rule;
     if (rule === undefined) return;
+    if (!pageOk) return showErr(t('popUnsupported'));
+    const host = $('host').textContent;
+    if (!host) return;
     paintSeg('siteSeg', 'rule', rule);
     const rules = { ...config.siteRules };
-    const host = $('host').textContent;
     if (rule) rules[host] = rule;
     else delete rules[host];
-    // siteRules 是整体替换语义，绕开 patch 的深合并
-    config.siteRules = rules;
-    await chrome.storage.local.set({ config });
-    await sendTab({ type: 'configChanged' });
+    await save({ siteRules: rules });   // siteRules 是整体替换语义，传整份规则表
   };
 
   $('exportBtn').onclick = async () => {

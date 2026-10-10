@@ -50,7 +50,10 @@ export function buildParagraphs(items, options = {}) {
 
   if (!rows.length) return [];
 
-  const leftEdge = Math.min(...rows.map((r) => r.indent));
+  // 不用 Math.min(...arr)：几万行的 PDF 会把参数列表撑爆，直接抛栈溢出
+  let leftEdge = Infinity;
+  for (const r of rows) if (r.indent < leftEdge) leftEdge = r.indent;
+  if (!Number.isFinite(leftEdge)) leftEdge = 0;
   const bodyH = median(rows.map((r) => r.h));
 
   // 3) 行合并成段

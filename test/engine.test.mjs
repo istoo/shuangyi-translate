@@ -189,6 +189,7 @@ check('请求按预设模板组装（地址、鉴权头、system/user 消息）'
     check('鉴权失败（401）不重试，立即报错', () => {
       assert.equal(hits, 1, `401 不应重试，实际请求 ${hits} 次`);
       assert.ok(e.message.includes('401'), e.message);
+      assert.equal(e.kind, 'fatal', '401 属于配置错误，内容脚本据此不拆批不重试');
     });
   }
   denied.close();
@@ -202,7 +203,170 @@ check('请求按预设模板组装（地址、鉴权头、system/user 消息）'
     console.log('❌ 未填 API Key 时本应抛错');
   } catch (e) {
     check('未填 API Key 的报错信息明确', () => assert.ok(e.message.includes('API Key'), e.message));
+    check('未填 API Key 属于 fatal', () => assert.equal(e.kind, 'fatal'));
   }
+}
+
+{
+  let hits = 0;
+  let sawTemperature = false;
+  let sawOmitted = false;
+  const strict = createServer((req, res) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; });
+    req.on('end', () => {
+      hits += 1;
+      const payload = JSON.parse(raw);
+      if (Object.prototype.hasOwnProperty.call(payload, 'temperature')) {
+        sawTemperature = true;
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { message: "Unsupported value: 'temperature' does not support 0 with this model. Only the default (1) value is supported.", type: 'invalid_request_error' } }));
+        return;
+      }
+      sawOmitted = true;
+      const texts = JSON.parse(payload.messages[1].content);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify(texts.map((t) => `默认温度:${t}`)) } }] }));
+    });
+  });
+  await new Promise((r) => strict.listen(0, '127.0.0.1', r));
+  const strictProvider = fillProvider(makeProvider('openai', {
+    id: 'strict', name: '不接受温度 0', url: `http://127.0.0.1:${strict.address().port}/v1`, apiKey: 'sk', model: 'm',
+  }));
+  try {
+    const out = await translateTexts(['hello'], { to: 'zh-CN', config: { engine: 'strict', providers: [strictProvider] } });
+    check('模型拒绝 temperature 0 时去掉该字段重试并成功', () => {
+      assert.deepEqual(out, ['默认温度:hello']);
+      assert.equal(hits, 2);
+      assert.equal(sawTemperature, true);
+      assert.equal(sawOmitted, true);
+    });
+  } catch (e) {
+    fail += 1;
+    console.log('❌ temperature 回退测试异常\n   ', e.message);
+  }
+  strict.close();
+}
+
+{
+  const short = createServer((req, res) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; });
+    req.on('end', () => {
+      const payload = JSON.parse(raw);
+      const texts = JSON.parse(payload.messages[1].content);
+      // 一次要两段时故意只回一段，模拟模型漏条；拆成单段后按原文回。
+      const out = texts.length > 1 ? texts.slice(0, 1) : texts;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify(out.map((t) => `对齐:${t}`)) } }] }));
+    });
+  });
+  await new Promise((r) => short.listen(0, '127.0.0.1', r));
+  const shortProvider = fillProvider(makeProvider('openai', {
+    id: 'short', name: '漏条', url: `http://127.0.0.1:${short.address().port}/v1`, apiKey: 'sk', model: 'm',
+  }));
+  try {
+    const out = await translateTexts(['alpha', 'beta'], { to: 'zh-CN', config: { engine: 'short', providers: [shortProvider] } });
+    check('模型少返回一条时拆开重译，不再补空错位', () => assert.deepEqual(out, ['对齐:alpha', '对齐:beta']));
+  } catch (e) {
+    fail += 1;
+    console.log('❌ 条数对齐测试异常\n   ', e.message);
+  }
+  short.close();
+}
+
+// 200 响应里带 error（模型名写错这类）：配置错误，必须标 fatal，否则一批会被拆成十几次请求
+{
+  const bad = createServer((req, res) => {
+    req.resume();
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: { message: 'model not found' } }));
+    });
+  });
+  await new Promise((r) => bad.listen(0, '127.0.0.1', r));
+  const badProvider = fillProvider(makeProvider('openai', {
+    id: 'bad', name: '错模型', url: `http://127.0.0.1:${bad.address().port}/v1`, apiKey: 'sk', model: 'nope',
+  }));
+  try {
+    await translateTexts(['a', 'b'], { to: 'zh-CN', config: { engine: 'bad', providers: [badProvider] } });
+    fail += 1;
+    console.log('❌ 应抛错');
+  } catch (e) {
+    check('200 里带 error 属于 fatal', () => assert.equal(e.kind, 'fatal'));
+  }
+  bad.close();
+}
+
+// DeepL：一次请求不能塞太多段，超过上限要分批，且结果顺序不能乱
+{
+  const bodies = [];
+  const dl = createServer((req, res) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; });
+    req.on('end', () => {
+      const params = new URLSearchParams(raw);
+      const texts = params.getAll('text');
+      bodies.push(texts);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ translations: texts.map((x) => ({ text: `D:${x}` })) }));
+    });
+  });
+  await new Promise((r) => dl.listen(0, '127.0.0.1', r));
+  const dlProvider = fillProvider(makeProvider('deepl', {
+    id: 'dl', name: 'DeepL', url: `http://127.0.0.1:${dl.address().port}/v2/translate`, apiKey: 'k',
+  }));
+  const many = Array.from({ length: 45 }, (_, i) => `t${i}`);
+  const out = await translateTexts(many, { to: 'zh-CN', config: { engine: 'dl', providers: [dlProvider] } });
+  check('DeepL 超过单次上限时分批', () => assert.equal(bodies.length, 2, `实际请求 ${bodies.length} 次`));
+  check('DeepL 每批不超过 40 段', () => assert.ok(bodies.every((b) => b.length <= 40)));
+  check('DeepL 分批后顺序与长度不变', () => assert.deepEqual(out, many.map((x) => `D:${x}`)));
+  dl.close();
+}
+
+// 模型返回空数组：不要二分下去（那会把一次请求放大成一整棵请求树）
+{
+  let hits = 0;
+  const empty = createServer((req, res) => {
+    hits += 1;
+    req.resume();
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ choices: [{ message: { content: '[]' } }] }));
+    });
+  });
+  await new Promise((r) => empty.listen(0, '127.0.0.1', r));
+  const emptyProvider = fillProvider(makeProvider('openai', {
+    id: 'empty', name: '空响应', url: `http://127.0.0.1:${empty.address().port}/v1`, apiKey: 'sk', model: 'm',
+  }));
+  let err = null;
+  try {
+    await translateTexts(['a1', 'a2', 'a3', 'a4'], { to: 'zh-CN', config: { engine: 'empty', providers: [emptyProvider] } });
+  } catch (e) { err = e; }
+  check('空响应不拆批重译，只请求一次', () => assert.equal(hits, 1, `实际请求 ${hits} 次`));
+  check('空响应报出可诊断的错误', () => assert.ok(err && /没取到译文/.test(err.message), err?.message));
+  empty.close();
+}
+
+// 模型没按 JSON 数组回，而是回了一整段纯文本：多段时无法对齐，要拆开重译
+{
+  const plain = createServer((req, res) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; });
+    req.on('end', () => {
+      const texts = JSON.parse(JSON.parse(raw).messages[1].content);
+      const content = texts.length > 1 ? '只有一行译文' : `译:${texts[0]}`;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ choices: [{ message: { content } }] }));
+    });
+  });
+  await new Promise((r) => plain.listen(0, '127.0.0.1', r));
+  const plainProvider = fillProvider(makeProvider('openai', {
+    id: 'plain', name: '纯文本', url: `http://127.0.0.1:${plain.address().port}/v1`, apiKey: 'sk', model: 'm',
+  }));
+  const out = await translateTexts(['alpha', 'beta'], { to: 'zh-CN', config: { engine: 'plain', providers: [plainProvider] } });
+  check('纯文本只回一行时拆开重译，不把同一行补给多段', () => assert.deepEqual(out, ['译:alpha', '译:beta']));
+  plain.close();
 }
 
 server.close();

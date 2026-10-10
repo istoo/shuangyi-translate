@@ -15,6 +15,7 @@ const cfg = {
   inputTranslate: true, showFloatBall: true, fontScale: 1, siteRules: {},
 };
 
+let failKind;              // 失败时后台返回的分类：fatal / slow / limited / 不分类
 let failNext = 0;          // 接下来多少次翻译请求要失败
 let requestCount = 0;
 const sentTexts = [];
@@ -43,7 +44,7 @@ function handle(msg) {
     sentTexts.push(...msg.texts);
     if (failNext > 0) {
       failNext -= 1;
-      return { ok: false, error: '模拟网络故障' };
+      return { ok: false, error: '模拟网络故障', kind: failKind };
     }
     return { ok: true, data: msg.texts.map((t) => '【译文】' + t) };
   }
@@ -80,7 +81,7 @@ await sleep(2600);   // 等待 120ms 批处理 + 1500ms 重投延迟
 
 check('失败后自动重投，最终翻译成功', transCount() === 2, `译文节点 ${transCount()} 个`);
 check('重投成功时不显示重试入口', retryCount() === 0, `重试入口 ${retryCount()} 个`);
-check('确实重试了（共 2 次请求）', requestCount === 2, `请求 ${requestCount} 次`);
+check('失败后拆成单段再译', requestCount === 3, `请求 ${requestCount} 次`);
 check('没有段落被标记为失败', errCount() === 0, `失败标记 ${errCount()} 个`);
 
 // ---------- 场景 2：连续失败后给出重试入口 ----------
@@ -93,7 +94,7 @@ await sleep(2600);
 
 check('连续失败后段落被标记为错误', errCount() === 2, `失败标记 ${errCount()} 个`);
 check('给出可点击的重试入口', retryCount() === 2, `重试入口 ${retryCount()} 个`);
-check('自动重投只做一次，不会无限重试', requestCount === 2, `请求 ${requestCount} 次`);
+check('单段只自动重试一次，不会无限重试', requestCount === 5, `请求 ${requestCount} 次`);
 check('重试入口可键盘聚焦（无障碍）',
   doc.querySelector('.irt-retry')?.getAttribute('role') === 'button'
   && doc.querySelector('.irt-retry')?.getAttribute('tabindex') === '0');
@@ -130,7 +131,28 @@ check('悬浮球徽标提示失败', doc.querySelector('.irt-ball-badge')?.textC
 await restorePage();
 check('还原后错误态清除', !doc.querySelector('.irt-ball-error'));
 
-console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);
+// ---------- 场景 5：失败分类决定怎么处理 ----------
+console.log('\n=== 失败分类 ===');
+failKind = 'fatal';
+failNext = 99;
+requestCount = 0;
+await translatePage();
+await sleep(600);
+check('fatal 配置错误只请求一次，不拆批不重试', requestCount === 1, `请求 ${requestCount} 次`);
+check('fatal 时各段直接标为错误', errCount() === 2, `失败标记 ${errCount()} 个`);
+await restorePage();
+
+failKind = 'slow';
+failNext = 1;
+requestCount = 0;
+await translatePage();
+await sleep(2200);
+check('slow（超时/连不上）整批重试，不拆成单段', requestCount === 2, `请求 ${requestCount} 次`);
+check('slow 重试成功后全部翻译', transCount() === 2 && errCount() === 0, `译文 ${transCount()} 个`);
+await restorePage();
+failKind = undefined;
+
+console.log(`\n=== 汇总\n通过 ${pass} / 失败 ${fail}`);
 process.exit(fail ? 1 : 0);
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }

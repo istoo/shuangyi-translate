@@ -110,6 +110,12 @@
   "showFloatBall": {
     "message": "Show the floating button"
   },
+  "openClosedShadow": {
+    "message": "Translate content in closed Shadow DOM"
+  },
+  "openClosedShadowNote": {
+    "message": "(rewrites attachShadow before page scripts run, takes effect only on pages opened afterwards; few sites need it, off by default)"
+  },
   "hoverTranslate": {
     "message": "Translate a single paragraph on hover"
   },
@@ -357,7 +363,7 @@
     "message": "Reset to defaults"
   },
   "cacheHint": {
-    "message": "The cache lives in memory only and is cleared when the browser restarts."
+    "message": "Translations are cached on this device, so reopening the same page does not translate it again. Changing the model, prompt or glossary invalidates the old entries."
   },
   "popTranslatePage": {
     "message": "Translate this page"
@@ -616,5 +622,8 @@
   },
   "errCannotConnect": {
     "message": "Can't reach the service — the URL is wrong, or the service isn't running"
+  },
+  "errTimeout": {
+    "message": "The request timed out and this batch was dropped"
   }
 }

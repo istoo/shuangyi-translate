@@ -15,19 +15,19 @@
   <section>
     <h2 data-i18n="secBasic">基础</h2>
     <div class="field">
-      <label data-i18n="targetLang">目标语言</label>
+      <label data-i18n="targetLang" for="targetLang">目标语言</label>
       <select id="targetLang"></select>
       <p class="hint" data-i18n="targetLangHint">网页将被翻译成该语言</p>
     </div>
     <div class="field">
-      <label data-i18n="displayMode">显示方式</label>
+      <label data-i18n="displayMode" for="mode">显示方式</label>
       <select id="mode">
         <option value="bilingual" data-i18n="modeBilingual">双语对照（原文 + 译文）</option>
         <option value="translation" data-i18n="modeTranslation">仅显示译文</option>
       </select>
     </div>
     <div class="field">
-      <label data-i18n="displayStyle">译文样式</label>
+      <label data-i18n="displayStyle" for="displayStyle">译文样式</label>
       <select id="displayStyle">
         <option value="dashed" data-i18n="styleDashed">虚线下划线</option>
         <option value="underline" data-i18n="styleUnderline">实线下划线</option>
@@ -37,18 +37,19 @@
       </select>
     </div>
     <div class="field">
-      <label><span data-i18n="fontSize">译文字号</span> <span class="val" id="fontScaleVal">1.00×</span></label>
+      <label for="fontScale"><span data-i18n="fontSize">译文字号</span> <span class="val" id="fontScaleVal">1.00×</span></label>
       <input type="range" id="fontScale" min="0.7" max="1.4" step="0.05" />
     </div>
   </section>
 
   <section>
     <h2 data-i18n="secInteraction">交互</h2>
-    <label class="check"><input type="checkbox" id="autoTranslate" /><span><span data-i18n="autoTranslate">打开网页时自动翻译</span><em data-i18n="autoTranslateNote">（母语页面会自动跳过）</em></span></label>
+    <label class="check" for="hoverHotkey"><input type="checkbox" id="autoTranslate" /><span><span data-i18n="autoTranslate">打开网页时自动翻译</span><em data-i18n="autoTranslateNote">（母语页面会自动跳过）</em></span></label>
     <label class="check"><input type="checkbox" id="showFloatBall" /><span data-i18n="showFloatBall">显示页面右下角悬浮球</span></label>
+    <label class="check"><input type="checkbox" id="openClosedShadow" /><span><span data-i18n="openClosedShadow">翻译封闭的 Shadow DOM 内容</span><em data-i18n="openClosedShadowNote">（会在页面脚本之前改写 attachShadow，仅对之后打开的页面生效；只有个别站点用得上，默认关闭）</em></span></label>
     <label class="check"><input type="checkbox" id="hoverTranslate" /><span data-i18n="hoverTranslate">鼠标悬停翻译单个段落</span></label>
     <div class="field indent">
-      <label data-i18n="hoverHotkey">悬停触发键</label>
+      <label for="hoverHotkey" data-i18n="hoverHotkey">悬停触发键</label>
       <select id="hoverHotkey">
         <option value="Shift" data-i18n="hotkeyShift">按住 Shift + 悬停</option>
         <option value="Control" data-i18n="hotkeyCtrl">按住 Ctrl + 悬停</option>
@@ -56,7 +57,7 @@
         <option value="none" data-i18n="hotkeyNone">仅悬停（无需按键）</option>
       </select>
     </div>
-    <label class="check"><input type="checkbox" id="selectionTranslate" /><span data-i18n="selectionTranslate">划词翻译气泡</span></label>
+    <label class="check" for="subtitleMode"><input type="checkbox" id="selectionTranslate" /><span data-i18n="selectionTranslate">划词翻译气泡</span></label>
     <label class="check"><input type="checkbox" id="inputTranslate" /><span data-i18n="inputTranslate">输入框翻译（连按 3 次空格，把输入内容译成目标语言）</span></label>
   </section>
 
@@ -64,14 +65,14 @@
     <h2 data-i18n="secSubtitle">视频字幕</h2>
     <label class="check"><input type="checkbox" id="subtitleTranslate" /><span data-i18n="subtitleTranslate">翻译视频字幕</span></label>
     <div class="field indent">
-      <label data-i18n="subtitleMode">字幕显示方式</label>
+      <label for="subtitleMode" data-i18n="subtitleMode">字幕显示方式</label>
       <select id="subtitleMode">
         <option value="bilingual" data-i18n="subtitleModeBilingual">原文 + 译文</option>
         <option value="translation" data-i18n="subtitleModeTranslation">仅译文</option>
       </select>
     </div>
     <div class="field indent">
-      <label><span data-i18n="subtitleFontScale">字幕字号</span> <span class="val" id="subtitleFontScaleVal">1.00×</span></label>
+      <label for="subtitleFontScale"><span data-i18n="subtitleFontScale">字幕字号</span> <span class="val" id="subtitleFontScaleVal">1.00×</span></label>
       <input type="range" id="subtitleFontScale" min="0.7" max="1.6" step="0.05" />
     </div>
     <p class="hint" data-i18n="subtitleHint">视频本身带字幕时自动显示双语字幕。</p>

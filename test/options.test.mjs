@@ -264,5 +264,37 @@ check('界面上没有漏翻的文案', () => {
   assert.deepEqual(leak, [], `以下文案没有翻译，直接显示成了 key：${leak.join(', ')}`);
 });
 
+console.log('\n=== 字段标签与输入框关联 ===');
+{
+  const input = fieldInput('模型');
+  const label = [...document.querySelectorAll('label')].find((l) => l.textContent === '模型');
+  check('标签用 for 关联到输入框', () => {
+    assert.ok(input.id, '输入框没有 id');
+    assert.equal(label.getAttribute('for'), input.id);
+  });
+  check('每个字段的 id 互不重复', () => {
+    const ids = [...document.querySelectorAll('[id^="f_"]')].map((n) => n.id);
+    assert.equal(ids.length, new Set(ids).size, `重复 id: ${ids.join(',')}`);
+  });
+}
+
+console.log('\n=== 改名不重建服务下拉 ===');
+{
+  const sel = $('engineSel');
+  const nodesBefore = [...sel.options];
+  const namesBefore = nodesBefore.map((o) => o.textContent);
+  const nameInput = fieldInput('名称');
+  nameInput.value = '我的服务';
+  fire(nameInput, 'input');
+  check('改名时下拉不被整个重建', () => {
+    assert.ok([...sel.options].every((o, i) => o === nodesBefore[i]), '下拉被整个重建了');
+  });
+  check('下拉里那一项跟着改名', () => {
+    const changed = [...sel.options].filter((o, i) => o.textContent !== namesBefore[i]);
+    assert.equal(changed.length, 1);
+    assert.equal(changed[0].textContent, '我的服务');
+  });
+}
+
 console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);
 if (fail) process.exit(1);

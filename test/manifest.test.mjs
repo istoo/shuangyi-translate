@@ -104,5 +104,23 @@ check('HTML 里的 id 与脚本用到的 id 对得上', () => {
   assert.deepEqual(problems, [], problems.join('\n'));
 });
 
+check('表单标签都关联到真实存在的控件', () => {
+  // 两类问题：label[for] 指向不存在的 id；label 紧挨着下拉/输入框却没关联
+  const problems = [];
+  const pages = ['src/options/options.html', 'src/popup/popup.html', 'src/welcome/welcome.html', 'src/pdf/pdf.html'];
+  for (const p of pages) {
+    const html = readFileSync(join(ROOT, p), 'utf8');
+    const ids = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+    for (const m of html.matchAll(/<label[^>]*\bfor="([^"]+)"/g)) {
+      if (!ids.has(m[1])) problems.push(`${p}: label for="${m[1]}" 找不到对应控件`);
+    }
+    // 内容里不能再出现 </label>：否则惰性匹配会跨过好几个 label，误报
+    for (const m of html.matchAll(/<label(?![^>]*\bfor=)[^>]*>((?:(?!<\/label>)[\s\S])*?)<\/label>\s*<(select|input|textarea)\b/g)) {
+      problems.push(`${p}: label「${m[1].replace(/<[^>]+>/g, '').trim().slice(0, 16)}」紧挨着 ${m[2]} 却没用 for 关联`);
+    }
+  }
+  assert.deepEqual(problems, [], problems.join('\n'));
+});
+
 console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);
 if (fail) process.exit(1);

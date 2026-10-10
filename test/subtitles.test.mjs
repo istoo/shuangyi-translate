@@ -12,6 +12,7 @@ const cfg = {
 };
 
 const sentBatches = [];
+const msgListeners = [];   // subtitles.js 注册的消息入口，用来模拟 configChanged
 let translateImpl = (texts) => texts.map((x) => '【译】' + x);
 
 function bootDom({ url = 'https://example.com/video', body = '' } = {}) {
@@ -27,7 +28,7 @@ function bootDom({ url = 'https://example.com/video', body = '' } = {}) {
     i18n: makeI18n(),
     runtime: {
       lastError: null,
-      onMessage: { addListener: () => {} },
+      onMessage: { addListener: (fn) => { msgListeners.push(fn); } },
       sendMessage: (msg, cb) => {
         let res = { ok: true };
         if (msg.type === 'getConfig') res = { ok: true, data: JSON.parse(JSON.stringify(cfg)) };
@@ -54,6 +55,8 @@ function attachTrack(window, video, cues) {
     kind: 'subtitles', label: 'English', language: 'en', mode: 'disabled',
     cues, activeCues: [],
     addEventListener(ev, fn) { (listeners[ev] ||= []).push(fn); },
+    removeEventListener(ev, fn) { listeners[ev] = (listeners[ev] || []).filter((x) => x !== fn); },
+    listenerCount(ev) { return (listeners[ev] || []).length; },
     emit(ev) { (listeners[ev] || []).forEach((fn) => fn()); },
   };
   const list = [track];
@@ -215,6 +218,32 @@ console.log('\n=== 翻译失败 ===');
   check('翻译出错时页面不崩，仍显示原文',
     doc.querySelector('.irt-sub-orig')?.textContent === 'Will fail');
   translateImpl = (texts) => texts.map((x) => '【译】' + x);
+}
+
+console.log('\n=== 控制器销毁时要摘掉监听器 ===');
+{
+  msgListeners.length = 0;
+  const { window, doc } = bootDom();
+  const video = doc.getElementById('v');
+  const cues = [{ start: 0, end: 5, text: 'Hello and welcome.' }];
+  const track = attachTrack(window, video, cues);
+  run(window);
+  await sleep(200);
+  check('控制器挂上了 cuechange 监听', track.listenerCount('cuechange') === 1, String(track.listenerCount('cuechange')));
+
+  // 关掉字幕翻译：init 里的 configChanged 分支会销毁全部控制器
+  cfg.subtitleTranslate = false;
+  for (const fn of msgListeners) fn({ type: 'configChanged' });
+  await sleep(200);
+
+  check('销毁后 cuechange 监听被摘掉', track.listenerCount('cuechange') === 0, String(track.listenerCount('cuechange')));
+  check('销毁后字幕层被移除', !doc.querySelector('.irt-sub-layer'));
+
+  // 重新打开：新控制器要能重新挂上监听（还原时 WeakSet/观察器不能留残状态）
+  cfg.subtitleTranslate = true;
+  for (const fn of msgListeners) fn({ type: 'configChanged' });
+  await sleep(250);
+  check('重新开启后重新挂上监听', track.listenerCount('cuechange') === 1, String(track.listenerCount('cuechange')));
 }
 
 console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);

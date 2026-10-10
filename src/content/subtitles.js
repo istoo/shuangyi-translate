@@ -54,6 +54,7 @@
   const TICK_MS = 2500;        // 预取轮询间隔
 
   const controllers = new Set();
+  let resizeObs = null;   // 尺寸变化要挨个观察，新增的视频补登记，销毁的注销
 
   // ---------- 单个视频的控制器 ----------
   function createController(video) {
@@ -63,6 +64,7 @@
       track: null,
       adapter: null,
       observer: null,
+      cleanups: [],           // 销毁时要执行的收尾动作（监听器、观察器）
       cache: new Map(),       // 原文 -> 译文
       inflight: new Set(),
       current: '',
@@ -83,11 +85,13 @@
     }
     bindTextTracks(state);
 
-    video.addEventListener('emptied', () => {
+    const onEmptied = () => {
       state.cache.clear();
       state.current = '';
       hideLayer(state);
-    });
+    };
+    video.addEventListener('emptied', onEmptied);
+    state.cleanups.push(() => video.removeEventListener('emptied', onEmptied));
 
     return state;
   }
@@ -107,7 +111,8 @@
         if (track.kind !== 'subtitles' && track.kind !== 'captions') continue;
         if (state.track === track) continue;
         state.track = track;
-        state.track.addEventListener('cuechange', onCueChange);
+        track.addEventListener('cuechange', onCueChange);
+        state.cleanups.push(() => track.removeEventListener('cuechange', onCueChange));
         // hidden：浏览器照常加载 cues，但不画原生字幕
         try { track.mode = 'hidden'; } catch { /* 某些实现只读 */ }
       }
@@ -118,6 +123,10 @@
       video.textTracks.addEventListener('addtrack', scan);
       // 轨道列表变化后重新扫一遍，覆盖 mode 被站点改回去的情况
       video.textTracks.addEventListener('change', scan);
+      state.cleanups.push(() => {
+        video.textTracks.removeEventListener('addtrack', scan);
+        video.textTracks.removeEventListener('change', scan);
+      });
     } catch { /* ignore */ }
   }
 
@@ -134,11 +143,19 @@
       showCue(state, text);
     };
 
-    // 字幕节点是动态创建/销毁的，只能观察整页
-    state.observer = new MutationObserver(read);
+    // 字幕节点是动态创建/销毁的，只能观察整页。
+    // 但整页变动非常频繁（页面动画、其他扩展改写 DOM），必须节流后再查 DOM。
+    let pending = false;
+    const scheduleRead = () => {
+      if (pending || state.disposed) return;
+      pending = true;
+      setTimeout(() => { pending = false; if (!state.disposed) read(); }, 150);
+    };
+    state.observer = new MutationObserver(scheduleRead);
     state.observer.observe(document.documentElement, {
       childList: true, subtree: true, characterData: true,
     });
+    state.cleanups.push(() => state.observer?.disconnect());
     read();
   }
 
@@ -195,6 +212,7 @@
   }
 
   function renderTrans(state, translated) {
+    if (state.disposed) return;
     const node = state.layer?.querySelector('.irt-sub-trans');
     if (!node) return;
     if (translated === null) {
@@ -277,7 +295,13 @@
 
   function dispose(state) {
     state.disposed = true;
-    state.observer?.disconnect();
+    // 摘掉监听器与观察器：站点会复用 video 节点，留着就是泄漏
+    for (const fn of state.cleanups) {
+      try { fn(); } catch { /* 单个收尾失败不影响其余 */ }
+    }
+    state.cleanups = [];
+    state.observer = null;
+    resizeObs?.unobserve(state.video);
     state.layer?.remove();
     controllers.delete(state);
   }
@@ -288,6 +312,7 @@
     for (const video of document.querySelectorAll('video')) {
       if ([...controllers].some((s) => s.video === video)) continue;
       attach(video);
+      resizeObs?.observe(video);
     }
   }
 
@@ -305,10 +330,8 @@
       rerun();
     });
     // 视频自身尺寸变化（例如 YouTube 切剧场模式）
-    if (window.ResizeObserver) {
-      const ro = new ResizeObserver(rerun);
-      document.querySelectorAll('video').forEach((v) => ro.observe(v));
-    }
+    if (window.ResizeObserver && !resizeObs) resizeObs = new ResizeObserver(rerun);
+    if (resizeObs) for (const v of document.querySelectorAll('video')) resizeObs.observe(v);
   }
 
   async function loadConfig() {

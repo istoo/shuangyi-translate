@@ -277,13 +277,17 @@ function padTo(list, expect) {
   return out;
 }
 
-// 模型没按 JSON 输出时的兜底：单段直接当译文，多段按行切。
-function parseModelArray(content, expect, depth = 0) {
-  const stripped = String(content ?? '')
+function stripFence(content) {
+  return String(content ?? '')
     .trim()
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/```\s*$/, '')
     .trim();
+}
+
+// 模型没按 JSON 输出时的兜底：单段直接当译文，多段按行切。
+function parseModelArray(content, expect, depth = 0) {
+  const stripped = stripFence(content);
   try {
     const parsed = JSON.parse(stripped);
     if (Array.isArray(parsed)) return padTo(parsed.map(pickText), expect);
@@ -291,6 +295,25 @@ function parseModelArray(content, expect, depth = 0) {
   } catch { /* 不是 JSON，落到下面的兜底 */ }
   if (expect === 1) return [stripped];
   return padTo(stripped.split('\n').map((l) => l.trim()).filter(Boolean), expect);
+}
+
+function textItemCount(content, depth = 0) {
+  const stripped = stripFence(content);
+  try {
+    const parsed = JSON.parse(stripped);
+    if (Array.isArray(parsed)) return parsed.length;
+    if (typeof parsed === 'string' && depth < 1) return textItemCount(parsed, depth + 1);
+  } catch { /* 按行数算 */ }
+  return stripped.split('\n').map((l) => l.trim()).filter(Boolean).length;
+}
+
+// 模型实际给出了几条译文（与 normalizeTexts 用同一套解析）。
+// 调用方拿它和输入条数比：对不上就拆开重译，不能靠补空、截断凑数，那会让译文错位到别的段落上。
+export function modelListLength(value) {
+  if (Array.isArray(value)) return value.length;
+  if (value === null || value === undefined) return null;
+  const text = typeof value === 'string' ? value : (pickText(value) || JSON.stringify(value));
+  return textItemCount(text);
 }
 
 // 把接口返回值归一化成与输入等长的译文字符串数组。

@@ -13,6 +13,10 @@ async function init() {
   applyI18n();
 
   const res = await chrome.runtime.sendMessage({ type: 'getConfig' });
+  if (!res?.ok || !res.data) {
+    flashSaved(t('popConfigError'));   // 后台没起来时报错，不要留下一个空白设置页
+    return;
+  }
   config = res.data;
 
   for (const [code, name] of LANGS) $('targetLang').appendChild(new Option(name, code));
@@ -32,7 +36,7 @@ function paint() {
   $('fontScale').value = config.fontScale;
   $('fontScaleVal').textContent = Number(config.fontScale).toFixed(2) + '×';
 
-  for (const k of ['autoTranslate', 'showFloatBall', 'hoverTranslate', 'selectionTranslate', 'inputTranslate']) {
+  for (const k of ['autoTranslate', 'showFloatBall', 'openClosedShadow', 'hoverTranslate', 'selectionTranslate', 'inputTranslate']) {
     $(k).checked = !!config[k];
   }
   $('hoverHotkey').value = config.hoverHotkey;
@@ -52,7 +56,7 @@ function bind() {
   });
   on('fontScale', 'change', (v) => ({ fontScale: Number(v) }));
 
-  for (const k of ['autoTranslate', 'showFloatBall', 'hoverTranslate', 'selectionTranslate', 'inputTranslate']) {
+  for (const k of ['autoTranslate', 'showFloatBall', 'openClosedShadow', 'hoverTranslate', 'selectionTranslate', 'inputTranslate']) {
     $(k).addEventListener('change', (e) => save({ [k]: e.target.checked }));
   }
   on('hoverHotkey', 'change', (v) => ({ hoverHotkey: v }));
@@ -186,8 +190,15 @@ function changeProviderType(type) {
 function updateProvider(patch) {
   const p = currentProvider();
   if (!p) return;
+  const renamed = patch.name !== undefined && patch.name !== p.name;
   Object.assign(p, patch);
-  renderEngineOptions(); // 名称可能变了
+  // 改名时只改对应的那一项：重建整个下拉会在每敲一个字时都销毁重建选项，
+  // 正在展开的下拉会被关掉，也会丢掉选中态
+  if (renamed) {
+    const opt = [...$('engineSel').options].find((o) => o.value === p.id);
+    if (opt) opt.text = p.name;
+    else renderEngineOptions();
+  }
   scheduleProviderSave();
 }
 
@@ -260,11 +271,15 @@ function renderField(key, p, def = FIELD_DEFS[key] || {}) {
   }
 
   const wrap = el('div', { class: 'field' });
-  wrap.appendChild(el('label', { text: labelText }));
+  const label = el('label', { text: labelText });
 
   const input = kind === 'textarea'
     ? el('textarea', { rows: String(def.rows || 5) })
     : el('input', { type: kind === 'number' ? 'number' : kind });
+  // 标签要显式关联输入框：否则点标签不聚焦，读屏也读不出字段名
+  input.id = `f_${p.id}_${key}`;
+  label.setAttribute('for', input.id);
+  wrap.appendChild(label);
   input.value = p[key] ?? '';
   if (def.placeholderKey) input.placeholder = t(def.placeholderKey);
   else if (def.placeholder) input.placeholder = def.placeholder;
@@ -280,8 +295,11 @@ function renderField(key, p, def = FIELD_DEFS[key] || {}) {
 
 function textField(label, value, onInput, hint) {
   const wrap = el('div', { class: 'field' });
-  wrap.appendChild(el('label', { text: label }));
+  const lab = el('label', { text: label });
   const input = el('input', { type: 'text' });
+  input.id = 'f_provider_name';
+  lab.setAttribute('for', input.id);
+  wrap.appendChild(lab);
   input.value = value;
   input.addEventListener('input', () => onInput(input.value));
   wrap.appendChild(input);
@@ -404,8 +422,9 @@ function renderSites() {
     del.onclick = async () => {
       const rules = { ...config.siteRules };
       delete rules[host];
-      config.siteRules = rules;
-      await chrome.storage.local.set({ config });
+      // 走 setConfig 而不是直接写 storage：直接写会把整份旧配置盖回去（并发保存时丢改动），
+      // 也不会通知已打开的标签页。siteRules 是整体替换语义，这里传整份规则表。
+      await save({ siteRules: rules });
       renderSites();
       flashSaved(t('deleted'));
     };

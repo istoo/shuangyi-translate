@@ -29,17 +29,19 @@
 /* 单元自身是 flex/grid：块级译文换到下一整行，而不是被挤成并排的窄列 */
 .irt-flex-host { flex-wrap: wrap !important; }
 .irt-flex-host > .irt-translation:not(.irt-inline) { flex: 1 0 100% !important; grid-column: 1 / -1 !important; }
+/* 摘要被 line-clamp 截成两行时，译文会被裁掉，翻译期间解除截断 */
+.irt-unclamp { -webkit-line-clamp: unset !important; line-clamp: unset !important; max-height: none !important; }
 
 /* 仅译文模式：隐藏原文，但保留译文节点 */
 html[data-irt-on='translation'] [data-irt-hide-origin] > *:not(.irt-translation),
 html[data-irt-on='translation'] [data-irt-hide-origin]::before {
   display: none !important;
 }
-/* 字号、行高都压成 0：裸露的原文文本节点不占宽也不占高。
-   只压字号的话，原文仍会撑出一整行空白（Reddit 每段多出 20px，标题多出 33px）。 */
-html[data-irt-on='translation'] [data-irt-hide-origin] {
-  font-size: 0 !important;
-  line-height: 0 !important;
+/* 裸露的原文文本节点被包进隐藏 span，单独藏掉。
+   不能用 font-size: 0 压原文：em / ch 这类相对单位会一起塌掉，
+   页面里 max-width: 14ch 的标题会直接变成 0 宽，译文被挤成一字一行（atomicagent.io 实测）。 */
+html[data-irt-on='translation'] [data-irt-hide-text] {
+  display: none !important;
 }
 /* 列表序号跟着原文字号，和译文留在同一行 */
 html[data-irt-on='translation'] [data-irt-hide-origin]::marker {
@@ -174,6 +176,7 @@ html[data-irt-on='translation'] [data-irt-hide-origin] > .irt-translation {
   color: #3884ff;
 }
 .irt-ball:hover { opacity: 1; transform: scale(1.06); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22); }
+.irt-ball:focus-visible { outline: 2px solid #3884ff; outline-offset: 2px; opacity: 1; }
 .irt-ball-on { background: #3884ff; color: #fff; border-color: transparent; opacity: 0.9; }
 /* 全部翻完但存在失败段落：用红色提示还能救 */
 .irt-ball-error { background: #d9433c !important; color: #fff !important; border-color: transparent !important; opacity: 1; }

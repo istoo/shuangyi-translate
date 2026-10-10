@@ -13,6 +13,7 @@ const listeners = {};
 const menus = [];
 const openedTabs = [];
 
+let registeredScripts = [];
 globalThis.chrome = {
   i18n: makeI18n(),
   runtime: {
@@ -28,6 +29,13 @@ globalThis.chrome = {
     create: (m) => menus.push(m),
     onClicked: { addListener: (fn) => { listeners.menuClick = fn; } },
   },
+  scripting: {
+    getRegisteredContentScripts: async ({ ids }) => registeredScripts.filter((x) => ids.includes(x.id)),
+    registerContentScripts: async (list) => { registeredScripts.push(...list); },
+    unregisterContentScripts: async ({ ids }) => {
+      registeredScripts = registeredScripts.filter((x) => !ids.includes(x.id));
+    },
+  },
   commands: { onCommand: { addListener: (fn) => { listeners.command = fn; } } },
   tabs: {
     query: async () => [],
@@ -35,9 +43,27 @@ globalThis.chrome = {
     create: ({ url }) => { openedTabs.push(url); return Promise.resolve({}); },
   },
   storage: {
+    onChanged: { addListener: (fn) => { listeners.storageChanged = fn; } },
     local: {
-      get: async () => ({ config: structuredClone(stored.config) }),
-      set: async (obj) => { stored.config = structuredClone(obj.config); },
+      get: async (keys) => {
+        const pick = (k) => (stored[k] === undefined ? undefined : structuredClone(stored[k]));
+        if (keys == null) {
+          const all = {};
+          for (const k of Object.keys(stored)) all[k] = pick(k);
+          return all;
+        }
+        if (typeof keys === 'string') return { [keys]: pick(keys) };
+        if (Array.isArray(keys)) {
+          const out = {};
+          for (const k of keys) out[k] = pick(k);
+          return out;
+        }
+        return { config: pick('config') };
+      },
+      set: async (obj) => {
+        for (const [k, v] of Object.entries(obj)) stored[k] = structuredClone(v);
+      },
+      remove: async (key) => { delete stored[key]; },
     },
   },
 };
@@ -120,6 +146,36 @@ await check('重复文本命中缓存，不再打上游', async () => {
   assert.equal(upstreamCalls, before, '完全相同的请求应当直接命中缓存');
 });
 
+await check('Service Worker 重启后仍命中本地缓存', async () => {
+  const { reloadFromDisk, cacheIdle } = await import(`${ROOT}src/bg/translation-cache.js`);
+  await cacheIdle();
+  await reloadFromDisk();
+  const before = upstreamCalls;
+  const r = await send({ type: 'translate', texts: ['hello', 'world'], to: 'zh-CN' });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.data, ['[1] hello', '[1] world']);
+  assert.equal(upstreamCalls, before, '磁盘上的译文应当在内存被清空后继续生效');
+});
+
+await check('一批译文只落盘一次，不是每条各写一遍', async () => {
+  const { cacheIdle } = await import(`${ROOT}src/bg/translation-cache.js`);
+  await cacheIdle();
+  const realSet = chrome.storage.local.set;
+  let cacheWrites = 0;
+  chrome.storage.local.set = async (obj) => {
+    if ('translationCache' in obj) cacheWrites += 1;
+    return realSet(obj);
+  };
+  try {
+    const r = await send({ type: 'translate', texts: ['w1', 'w2', 'w3', 'w4', 'w5'], to: 'zh-CN' });
+    assert.equal(r.ok, true);
+    await cacheIdle();
+    assert.equal(cacheWrites, 1, `实际写了 ${cacheWrites} 次`);
+  } finally {
+    chrome.storage.local.set = realSet;
+  }
+});
+
 await check('改目标语言不会复用缓存', async () => {
   const before = upstreamCalls;
   await send({ type: 'translate', texts: ['hello'], to: 'en' });
@@ -156,6 +212,31 @@ await check('翻译失败时错误经 sendResponse 回传', async () => {
   assert.ok(/Mock/.test(r.error), r.error);
 });
 
+await check('封闭 Shadow DOM 支持默认关闭，打开设置才注册 MAIN world 脚本', async () => {
+  const flush = () => new Promise((r) => setTimeout(r, 20));
+  listeners.storageChanged({ config: {} }, 'local');
+  await flush();
+  assert.equal(registeredScripts.length, 0, '默认不应注册');
+
+  await send({ type: 'setConfig', patch: { openClosedShadow: true } });
+  listeners.storageChanged({ config: {} }, 'local');
+  await flush();
+  assert.equal(registeredScripts.length, 1);
+  const [script] = registeredScripts;
+  assert.equal(script.world, 'MAIN');
+  assert.equal(script.runAt, 'document_start');
+  assert.equal(script.allFrames, false, '只在顶层文档注入');
+
+  listeners.storageChanged({ config: {} }, 'local');
+  await flush();
+  assert.equal(registeredScripts.length, 1, '重复同步不会重复注册');
+
+  await send({ type: 'setConfig', patch: { openClosedShadow: false } });
+  listeners.storageChanged({ config: {} }, 'local');
+  await flush();
+  assert.equal(registeredScripts.length, 0, '关闭后应注销');
+});
+
 await check('onInstalled 会建右键菜单并迁移 v1 配置', async () => {
   menus.length = 0;
   stored.config = {
@@ -169,6 +250,21 @@ await check('onInstalled 会建右键菜单并迁移 v1 配置', async () => {
   assert.equal(stored.config.version, 2, 'v1 配置应被迁移写回');
   assert.ok(stored.config.providers.some((p) => p.id === 'deepl' && p.apiKey === 'dk'));
   assert.equal(stored.config.providers.find((p) => p.id === 'openai').model, 'deepseek-chat');
+});
+
+await check('并发保存不会互相覆盖（读-改-写要串行）', async () => {
+  // 设置页改模型名是防抖保存、勾选项是立即保存，两条消息可能同时在飞
+  await Promise.all([
+    send({ type: 'setConfig', patch: { targetLang: 'ja' } }),
+    send({ type: 'setConfig', patch: { mode: 'translation' } }),
+    send({ type: 'setConfig', patch: { fontScale: 1.3 } }),
+  ]);
+  const res = await send({ type: 'getConfig' });
+  const cfg = res.data;
+  assert.equal(cfg.targetLang, 'ja', '第一个补丁被覆盖了');
+  assert.equal(cfg.mode, 'translation', '第二个补丁被覆盖了');
+  assert.equal(cfg.fontScale, 1.3, '第三个补丁被覆盖了');
+  await send({ type: 'setConfig', patch: { targetLang: 'zh-CN', mode: 'bilingual', fontScale: 1 } });
 });
 
 await check('setConfig 对 siteRules 是整体替换语义', async () => {

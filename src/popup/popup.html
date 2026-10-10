@@ -8,18 +8,18 @@
 <body>
   <header class="head">
     <div class="brand"><span class="logo" aria-hidden="true"></span><span>双译</span></div>
-    <button id="openOptions" class="icon-btn" title="⚙">⚙</button>
+    <button id="openOptions" class="icon-btn" title="⚙" data-i18n-title="popMoreSettings">⚙</button>
   </header>
 
   <button id="toggle" class="primary">翻译此页面</button>
 
   <div class="row">
-    <label data-i18n="targetLang">目标语言</label>
+    <label for="targetLang" data-i18n="targetLang">目标语言</label>
     <select id="targetLang"></select>
   </div>
 
   <div class="row">
-    <label data-i18n="secService">翻译服务</label>
+    <label for="engine" data-i18n="secService">翻译服务</label>
     <select id="engine"></select>
   </div>
 
@@ -32,7 +32,7 @@
   </div>
 
   <div class="row">
-    <label data-i18n="displayStyle">译文样式</label>
+    <label for="displayStyle" data-i18n="displayStyle">译文样式</label>
     <select id="displayStyle">
       <option value="dashed" data-i18n="styleDashed">虚线下划线</option>
       <option value="underline" data-i18n="styleUnderline">实线下划线</option>

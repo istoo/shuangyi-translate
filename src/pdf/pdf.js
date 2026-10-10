@@ -15,6 +15,8 @@ const $ = (id) => document.getElementById(id);
 const state = { title: '', paragraphs: [], nodes: [], translated: 0 };
 let config = null;
 let observer = null;
+// 换文件时自增：在途的旧批次回来后据此丢弃结果，否则会把上一份 PDF 的译文写进新文档
+let gen = 0;
 
 // ---------- 与后台通信 ----------
 const send = (msg) => new Promise((resolve) => {
@@ -57,6 +59,8 @@ async function loadPdf(file) {
     state.title = file.name.replace(/\.pdf$/i, '');
     state.paragraphs = paragraphs.map((p) => ({ ...p, translation: '', status: 'idle' }));
     state.translated = 0;
+    gen += 1;          // 之前排队的段落全部作废
+    queue.length = 0;
     render();
     setStatus('');
   } catch (e) {
@@ -101,7 +105,7 @@ const queue = [];
 let inflight = 0;
 let flushTimer = null;
 const BATCH = 12;
-const MAX_PARALLEL = 2;
+const MAX_PARALLEL = 4;
 
 function observeParagraphs() {
   observer?.disconnect();
@@ -118,26 +122,36 @@ function observeParagraphs() {
   });
 }
 
-function enqueue(i) {
+function enqueue(i, cap = BATCH) {
   const para = state.paragraphs[i];
   if (!para || para.status !== 'idle') return;
   para.status = 'queued';
+  para.cap = cap;
   queue.push(i);
   scheduleFlush();
 }
 
 function scheduleFlush() {
   if (flushTimer) return;
-  flushTimer = setTimeout(flush, 120);
+  const delay = queue.length >= BATCH ? 0 : 16;
+  flushTimer = setTimeout(flush, delay);
 }
 
-async function flush() {
+function flush() {
   flushTimer = null;
   if (!queue.length) return;
-  if (inflight >= MAX_PARALLEL) return scheduleFlush();
+  // 同网页：空位一次补满，避免整份 PDF 串行一页页等。
+  while (queue.length && inflight < MAX_PARALLEL) {
+    const cap = state.paragraphs[queue[0]]?.cap || BATCH;
+    const batch = [];
+    while (queue.length && batch.length < cap) batch.push(queue.shift());
+    inflight += 1;
+    runBatch(batch);
+  }
+}
 
-  const batch = queue.splice(0, BATCH);
-  inflight += 1;
+async function runBatch(batch) {
+  const myGen = gen;
   batch.forEach((i) => {
     state.paragraphs[i].status = 'pending';
     state.nodes[i].trans.textContent = t('pdfTranslating');
@@ -151,7 +165,8 @@ async function flush() {
       to: config.targetLang,
       docTitle: state.title,   // 让模型先建立主题认知
     });
-    if (!res.ok) throw new Error(res.error);
+    if (!res.ok) throw Object.assign(new Error(res.error), { kind: res.kind });
+    if (myGen !== gen) return;
     batch.forEach((i, k) => {
       const out = res.data[k] || '';
       state.paragraphs[i].translation = out;
@@ -162,13 +177,29 @@ async function flush() {
       if (out) state.translated += 1;
     });
   } catch (e) {
-    batch.forEach((i) => {
-      state.paragraphs[i].status = 'error';
-      const node = state.nodes[i].trans;
-      node.textContent = t('csFailed', e.message || e);
-      node.classList.remove('pending');
-      node.classList.add('error');
-    });
+    if (myGen !== gen) return;
+    const reason = e.message || String(e);
+    // fatal 是配置错误，重试没用。limited / slow（限流、超时）整批等一会儿只重试一次。
+    // 其余失败拆成单段，隔离出有问题的那一段；单段再失败就报错。
+    const kind = e.kind;
+    const again = kind !== 'fatal'
+      && (kind ? batch.some((i) => !state.paragraphs[i].retried) : batch.length > 1);
+    if (again) {
+      batch.forEach((i) => {
+        if (kind) state.paragraphs[i].retried = true;
+        state.paragraphs[i].status = 'idle';
+        state.nodes[i].trans.classList.remove('pending');
+      });
+      setTimeout(() => batch.forEach((i) => enqueue(i, kind ? BATCH : 1)), kind ? 1500 : 0);
+    } else {
+      batch.forEach((i) => {
+        state.paragraphs[i].status = 'error';
+        const node = state.nodes[i].trans;
+        node.textContent = t('csFailed', reason);
+        node.classList.remove('pending');
+        node.classList.add('error');
+      });
+    }
   } finally {
     inflight -= 1;
     setSummary();

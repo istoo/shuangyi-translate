@@ -29,10 +29,20 @@ window.Element.prototype.getBoundingClientRect = function () {
 };
 
 let listener = null;
+let deferTranslate = false;
+const deferred = [];
 window.chrome = { runtime: {
   lastError: null,
   onMessage: { addListener: (fn) => { listener = fn; } },
-  sendMessage: (msg, cb) => { const r = handle(msg); cb && cb(r); return Promise.resolve(r); },
+  sendMessage: (msg, cb) => {
+    // deferTranslate：把翻译响应压后，用来复现「请求在飞时用户点了还原」
+    if (deferTranslate && msg.type === 'translate') {
+      return new Promise((resolve) => {
+        deferred.push(() => { const r = handle(msg); cb && cb(r); resolve(r); });
+      });
+    }
+    const r = handle(msg); cb && cb(r); return Promise.resolve(r);
+  },
 } };
 function handle(msg) {
   if (msg.type === 'getConfig') return { ok: true, data: JSON.parse(JSON.stringify(cfg)) };
@@ -76,6 +86,22 @@ check('还原后译文已清空', doc.querySelectorAll('.irt-translation').lengt
 
 const again = await ask({ type: 'togglePage' });
 check('反复切换后仍然准确', again?.translated === true, JSON.stringify(again));
+
+console.log('\n=== 还原后迟到的响应 ===');
+deferTranslate = true;
+deferred.length = 0;
+await ask({ type: 'translatePage' });
+await sleep(120);
+check('请求已发出但还没回来', deferred.length === 1, String(deferred.length));
+await ask({ type: 'restorePage' });
+check('还原后页面没有译文', doc.querySelectorAll('.irt-translation').length === 0);
+while (deferred.length) deferred.shift()();
+await sleep(200);
+check('迟到的响应不再把译文写回页面', doc.querySelectorAll('.irt-translation').length === 0,
+  `残留译文节点 ${doc.querySelectorAll('.irt-translation').length} 个`);
+check('迟到的响应不留下状态标记', doc.querySelectorAll('[data-irt-state]').length === 0,
+  `残留标记 ${doc.querySelectorAll('[data-irt-state]').length} 个`);
+deferTranslate = false;
 
 console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);
 process.exit(fail ? 1 : 0);

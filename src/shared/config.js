@@ -34,6 +34,7 @@ export const DEFAULTS = {
   selectionTranslate: true,      // 划词翻译气泡
   inputTranslate: true,          // 输入框三连空格翻译
   showFloatBall: true,           // 页面右下角悬浮球
+  openClosedShadow: false,       // 翻译 closed shadow DOM：要在页面脚本前改写 attachShadow，默认关闭
   fontScale: 1,                  // 译文字号缩放
   // 视频字幕：默认开启，但只在视频本身有字幕时才会生效，不会主动去开字幕
   subtitleTranslate: true,
@@ -50,7 +51,11 @@ export function migrateConfig(stored) {
   if (stored.version === CONFIG_VERSION) return stored;
 
   const next = { ...stored, version: CONFIG_VERSION };
-  const providers = defaultProviders();
+  // 已经是档案数组就别重建：从更新版本回退安装时（version 对不上但数据是新的），
+  // 重建默认档案会把用户已存的 Key、模型、术语库全丢掉。
+  const providers = Array.isArray(stored.providers) && stored.providers.length
+    ? stored.providers.map((p) => ({ ...p }))
+    : defaultProviders();
 
   const oldOpenai = stored.openai || {};
   if (oldOpenai.apiKey || oldOpenai.model) {
@@ -82,11 +87,19 @@ export async function getConfig() {
   return deepMerge(structuredClone(DEFAULTS), migrateConfig(stored.config) || {});
 }
 
+// setConfig 是「读-改-写」。设置页和弹窗可能同时发消息（改模型名是防抖保存，勾选项是立即保存），
+// 不串行化的话两边读到同一份旧配置，后写的会把先写的整片覆盖掉。
+let writeChain = Promise.resolve();
+
 export async function setConfig(patch) {
-  const cur = await getConfig();
-  const next = deepMerge(cur, patch);
-  await chrome.storage.local.set({ config: next });
-  return next;
+  const run = writeChain.then(async () => {
+    const cur = await getConfig();
+    const next = deepMerge(cur, patch);
+    await chrome.storage.local.set({ config: next });
+    return next;
+  });
+  writeChain = run.then(() => {}, () => {});   // 一次失败不能卡住后续写入
+  return run;
 }
 
 export async function ensureMigrated() {

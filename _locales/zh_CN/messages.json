@@ -110,6 +110,12 @@
   "showFloatBall": {
     "message": "显示页面右下角悬浮球"
   },
+  "openClosedShadow": {
+    "message": "翻译封闭的 Shadow DOM 内容"
+  },
+  "openClosedShadowNote": {
+    "message": "（会在页面脚本之前改写 attachShadow，仅对之后打开的页面生效；只有个别站点用得上，默认关闭）"
+  },
   "hoverTranslate": {
     "message": "鼠标悬停翻译单个段落"
   },
@@ -357,7 +363,7 @@
     "message": "恢复默认设置"
   },
   "cacheHint": {
-    "message": "译文缓存只存在内存里，浏览器重启即清空。"
+    "message": "译文缓存在本地保存，重复打开同一页不会重新翻译；改模型、提示词或术语库后旧译文自动失效。"
   },
   "popTranslatePage": {
     "message": "翻译此页面"
@@ -616,5 +622,8 @@
   },
   "errCannotConnect": {
     "message": "无法连接到服务：地址写错了，或者服务没有启动"
+  },
+  "errTimeout": {
+    "message": "请求超时，这一批已放弃"
   }
 }

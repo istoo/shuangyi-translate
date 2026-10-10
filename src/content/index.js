@@ -25,11 +25,12 @@
 .irt-style-highlight { background: rgba(255,213,79,.22); border-radius: 3px; padding: .05em .25em; }
 .irt-style-blockquote { border-left: 3px solid rgba(56,132,255,.55); padding-left: .65em; }
 [data-irt-hide-origin] > *:not(.irt-translation), [data-irt-hide-origin]::before { display: none !important; }
-[data-irt-hide-origin] { font-size: 0 !important; line-height: 0 !important; }
+[data-irt-hide-text] { display: none !important; }
 [data-irt-hide-origin]::marker { font-size: var(--irt-origin-fs, 1rem); }
 [data-irt-hide-origin] > .irt-translation { font-size: calc(var(--irt-origin-fs, 1rem) * var(--irt-font-scale, 1)) !important; line-height: var(--irt-origin-lh, normal) !important; display: inline !important; margin: 0 !important; }
 .irt-flex-host { flex-wrap: wrap !important; }
 .irt-flex-host > .irt-translation:not(.irt-inline) { flex: 1 0 100% !important; grid-column: 1 / -1 !important; }
+.irt-unclamp { -webkit-line-clamp: unset !important; line-clamp: unset !important; max-height: none !important; }
 .irt-pending { opacity: .82; }
 [data-irt-state='error'] { outline: 1px dotted rgba(220,70,70,.45); outline-offset: 2px; }
 .irt-translation.irt-retry { display: inline-flex !important; align-items: center; gap: 4px; margin: .2em 0 .3em !important; padding: 2px 9px; font: 500 max(11px,.74em)/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif; color: #d9433c !important; background: rgba(217,67,60,.09) !important; border: 1px solid rgba(217,67,60,.32) !important; border-radius: 6px; cursor: pointer; user-select: none; }
@@ -87,11 +88,15 @@
   let config = null;
   let pageTranslated = false;
   let observer = null;      // IntersectionObserver：懒翻译
+  const HIDDEN_TEXT_ATTR = 'data-irt-hide-text';   // 仅译文模式下包住原文文本节点的 span
   let mutationObs = null;   // MutationObserver：动态内容
   const queue = [];         // 待翻译单元
   let flushTimer = null;
   let rescanTimer = null;   // 定期兜底扫描的定时器，全局只保留一个
   let inflight = 0;
+  // 还原会让在途的请求作废：给每个入队项盖上会话号，响应回来时对不上就丢弃。
+  // 不能用 pageTranslated 判断——悬停翻译是在「整页未翻译」状态下工作的。
+  let session = 0;
   let stats = { done: 0, error: 0 };
   // 用户自己改过的译文（key 是原文 html）。重译时会让位给新译文。
   const userEdits = new Map();
@@ -174,29 +179,63 @@
   // 页面框架（导航、顶栏、页脚、按钮、菜单）：整页翻译时跳过整棵子树。
   // 沉浸式翻译也是这么做的 —— 这些文字用户早就认识，翻了只会把每个导航项、
   // 按钮撑高一截，页面立刻变乱。需要时仍可悬停单段翻译。
-  // 按钮、菜单这类控件任何模式都不翻；导航、顶栏、页脚只在双语模式下跳过 ——
-  // 仅译文模式是就地替换文字、不增加行，翻了也不会撑乱布局（沉浸式翻译也会翻导航）。
-  const CONTROL_ROLES = new Set(['menu', 'menubar', 'toolbar', 'tablist', 'button', 'search']);
+  // 菜单、工具栏任何模式都跳过。按钮两种模式都翻：筛选栏标题经常就是 button。
+  // 短按钮走行内译文，不另起一块，避免把一排按钮撑高。
+  // 导航、顶栏、页脚只在双语模式下跳过。
+  const CONTROL_ROLES = new Set(['menu', 'menubar', 'toolbar', 'tablist', 'search']);
   const FRAME_ROLES = new Set(['navigation', 'banner', 'contentinfo']);
 
   const replaceMode = () => config?.mode === 'translation';
 
-  function isPageChrome(el) {
-    if (el.tagName === 'BUTTON' || CONTROL_ROLES.has(el.getAttribute('role'))) return true;
+  // 页面级导航、顶栏、页脚，以及选项卡条。容器本身不翻译，但要继续往里走：
+  // OpenRouter 的筛选栏就是一个 <nav>，整棵跳过的话左侧一个字都不会变。
+  function isFrameContainer(el) {
+    const role = el.getAttribute('role');
+    if (role === 'tablist') return true;
     if (replaceMode()) return false;
-    if (el.tagName === 'NAV' || FRAME_ROLES.has(el.getAttribute('role'))) return true;
-    // 文章自己的 <header>/<footer>（标题、署名）是正文的一部分，只跳过页面级的
+    if (el.tagName === 'NAV' || FRAME_ROLES.has(role)) return true;
     if (el.tagName === 'HEADER' || el.tagName === 'FOOTER') {
       return !el.parentElement?.closest('article, main, [role="main"], section');
     }
     return false;
   }
 
+  function inPageFrame(el) {
+    const frame = el.closest?.('nav, header, footer, [role="navigation"], [role="banner"], [role="contentinfo"]');
+    if (!frame || frame === el) return false;
+    if ((frame.tagName === 'HEADER' || frame.tagName === 'FOOTER')
+      && frame.parentElement?.closest('article, main, [role="main"], section')) return false;
+    return true;
+  }
+
+  function isPageChrome(el) {
+    const role = el.getAttribute('role');
+    // 选项卡条要往下走，不能在这里把整组拦掉。菜单和工具栏仍然整棵跳过。
+    if (role && role !== 'tablist' && CONTROL_ROLES.has(role)) return true;
+    if (isFrameContainer(el)) return true;
+    if (replaceMode()) return false;
+    // 导航、顶栏里的链接和按钮仍跳过（Sign up、Models 这类，翻了会把顶栏撑得换行）。
+    // 标题里的按钮是折叠筛选栏的分组标题，要翻；复选框行不是链接也不是按钮，照常翻。
+    const control = el.tagName === 'A' || role === 'link' || el.tagName === 'BUTTON' || role === 'button';
+    if (control && inPageFrame(el) && !el.closest('h1, h2, h3, h4, h5, h6')) return true;
+    return false;
+  }
+
   // 不值得整页翻译的零碎标签：非正文标签、不超过 3 个词、不成句。
   // "Public"、"User flair"、"Weekly visitors" 这类，翻了只添乱。
   function isTinyLabel(el, text) {
-    // 表单 label 是用户要填的东西，再短也翻；仅译文模式就地替换，短标签也翻
+    // 表单 label 是用户要填的东西，再短也翻；仅译文模式就地替换，短标签也翻。
+    // 按钮及其内部文字也翻：左侧筛选栏的标题就包在 button 里。
     if (replaceMode() || PROSE_TAGS.has(el.tagName) || el.tagName === 'LABEL') return false;
+    const btn = el.closest?.('button, [role="button"]');
+    if (btn) {
+      // 按钮自己、或按钮里唯一的一段文字（筛选栏标题）才翻。
+      // 整张卡片做成 role=button 时，里面的“42 comments”这类零碎文字不能跟着翻。
+      const flat = (n) => (n.textContent || '').replace(/\s+/g, ' ').trim();
+      if (btn === el || flat(btn) === flat(el)) return false;
+    }
+    // 筛选栏里挨着复选框的短词（Text、Image）也要翻，不能当零碎标签丢掉。
+    if (el.querySelector?.('[role="checkbox"], input[type="checkbox"]')) return false;
     const s = text.replace(/\s+/g, ' ').trim();
     return s.split(' ').length <= 3 && !/[.!?。！？]$/.test(s);
   }
@@ -223,8 +262,10 @@
     return roots;
   }
 
-  function collectUnits(root) {
+  function collectUnits(root, nearOnly = false) {
     const units = [];
+    // 动态插入的子树可能落在菜单、工具栏里（下拉菜单一展开就是）：从祖先判断，不能只看根自己
+    if (root.closest?.('[role="menu"], [role="menubar"], [role="toolbar"], [role="search"]')) return units;
     const walk = (el, depth) => {
       if (depth > 60) return;
       if (el.nodeType !== 1) return;
@@ -233,7 +274,18 @@
       if (el.classList?.contains(MARK)) return;
       if (el.isContentEditable) return;
       if (el.closest('[data-irt-ignore]')) return;
-      if (isPageChrome(el)) return;
+      if (isPageChrome(el)) {
+        if (isFrameContainer(el)) {
+          for (const child of el.children) walk(child, depth + 1);
+          if (el.shadowRoot) for (const child of el.shadowRoot.children || []) walk(child, depth + 1);
+        }
+        return;
+      }
+      // 滚动和定时兜底只复查视口附近。整棵文档每几百毫秒走一遍，大站点会卡。
+      if (nearOnly && !isContents(el)) {
+        const rect = el.getBoundingClientRect?.();
+        if (rect && rect.top > window.innerHeight + 800) return;
+      }
 
       // display:contents 的元素自己不成盒：既不能当单元（没有盒子承载译文），
       // 也不能因为 rect 是 0×0 就整棵跳过 —— 它的内容其实显示在父级的布局里。
@@ -282,7 +334,11 @@
         } else if (child.nodeType === 1) {
           if (isSkippedNode(child)) continue;
           // 按钮/菜单等控件的文字不能并进父元素的句子里（否则父元素会把它带去翻译）
-          if (isPageChrome(child)) continue;
+          if (isPageChrome(child)) {
+            // 导航本身要留下，好让里面的筛选按钮继续往下走。
+            if (isFrameContainer(child)) blocks.push(child);
+            continue;
+          }
           if (isContents(child)) {
             visit(child);
             // contents 元素也可能是 shadow host（自定义元素常常两样都占）
@@ -349,9 +405,9 @@
       const d = displayOf(el);
       return !(d === 'inline' || d === 'inline-block' || d === 'contents');
     }
-    // 链接/按钮/标签：只有"独立成条"时才算边界（导航项、按钮）。
-    // 句子中间的链接必须留在段落里，否则译文会被切成碎片。
-    if (INLINE_UNIT_TAGS.has(tag)) return isStandaloneInline(el);
+    // 链接、按钮和 label 只有独占一行时才拆成单元；句子中间的链接、按钮必须留在段落里，
+    // 否则句子会被切成两截，译文语序也跟着错。
+    if (INLINE_UNIT_TAGS.has(tag) || el.getAttribute('role') === 'button') return isStandaloneInline(el);
     if (INLINE_TAGS.has(tag)) {
       // 其余默认内联的标签，只有被 CSS 改成块级排布时才拆
       const d = displayOf(el);
@@ -379,6 +435,9 @@
       if (isSkippedNode(n) || n.classList?.contains(MARK)) continue;
       if (INLINE_UNIT_TAGS.has(n.tagName)) continue;
       if (BLOCK_TAGS.has(n.tagName)) continue;
+      // CSS 改成块级排布的兄弟自己占一行，不算同行文字
+      const nd = displayOf(n);
+      if (nd === 'block' || nd === 'flex' || nd === 'grid' || nd === 'list-item' || nd === 'table') continue;
       siblingText += n.textContent || '';
     }
     return siblingText.trim().length === 0;
@@ -402,10 +461,19 @@
           parts.push(escapeHtml(child.nodeValue));
         } else if (child.nodeType === 1) {
           if (child.classList?.contains(MARK)) continue;
+          // 仅译文模式下原文被包进隐藏 span：它承载的就是本单元的原文，
+          // 要算进指纹和待译文本，否则每次重扫都以为内容变了，会反复重译。
+          if (child.hasAttribute(HIDDEN_TEXT_ATTR)) {
+            parts.push(escapeHtml(child.textContent || ''));
+            continue;
+          }
           // 块级子元素是独立单元，不并入本单元的文本
           if (isBlockish(child)) continue;
-          // 看不见的子元素既不送翻译，也不克隆进译文（克隆出来反而会显示）
-          if (child.tagName !== 'BR' && child.tagName !== 'IMG' && !isVisible(child)) continue;
+          // 看不见的子元素既不送翻译，也不克隆进译文（克隆出来反而会显示）。
+          // 例外：仅译文模式下这些子元素是被我们自己的样式藏起来的，不能因此把它们算作「内容变了」——
+          // 否则每次重扫指纹都对不上，整页会不停重译、译文节点反复重建（带链接的段落实测必现）。
+          const hiddenByUs = el.hasAttribute('data-irt-hide-origin');
+          if (!hiddenByUs && child.tagName !== 'BR' && child.tagName !== 'IMG' && !isVisible(child)) continue;
           const i = idx++;
           holders.push(child);
           const inner = visibleTextOf(child);
@@ -479,11 +547,14 @@
     const edited = userEdits.get(el.__irtSourceHtml);
     if (edited !== undefined) translated = edited;
     if (!translated || !translated.trim()) return markState(el, 'done');
+    // 模型原样返回原文（品牌名、型号、代码这类实际不需要翻的）：再插一遍只会多出一条虚线下划线，
+    // 仅译文模式还会把原文换成一个一模一样的副本。原文照旧显示就行。
+    if (sameAsSource(el, translated)) return markState(el, 'done');
     removeTranslationOf(el);
 
     const inlineUnit = getComputedStyle(el).display.startsWith('inline')
       || isShortLabel(el, el.__irtSourceHtml || translated);
-    // 仅译文模式下原文 font-size 会被压成 0，先记下原字号给译文用，避免译文忽大忽小
+    // 先记下原字号：译文和列表序号（::marker）都要用它，避免忽大忽小
     if (!el.hasAttribute('data-irt-hide-origin')) {
       const cs = getComputedStyle(el);
       el.__irtFontSize = cs.fontSize;
@@ -500,9 +571,7 @@
     if (el.__irtLineHeight && el.__irtLineHeight !== 'normal') node.style.setProperty('--irt-origin-lh', el.__irtLineHeight);
     node.appendChild(deserialize(translated, holders));
 
-    if (config.mode === 'translation') {
-      el.setAttribute('data-irt-hide-origin', '');
-    }
+    if (config.mode === 'translation') hideOrigin(el);
 
     // 行内元素的译文跟在后面并加分隔；块级元素另起一行
     if (inlineUnit) node.classList.add('irt-inline');
@@ -512,7 +581,73 @@
     if (!inlineUnit && /flex|grid/.test(getComputedStyle(el).display)) el.classList.add('irt-flex-host');
     ensureShadowStyle(el);
     el.appendChild(node);
+    releaseLineClamp(el);
     markState(el, 'done');
+  }
+
+  // 卡片摘要常用 line-clamp 只显示两行。原文已经占满两行时，译文排在第三行会被整段裁掉（OpenRouter 模型列表实测）。
+  // 往上看几层，把截断解除，还原时再恢复。
+  // 例外：容器旁边有页面自己的“展开 / Show more”控件时，不能拆它的折叠。页面会量内容是否溢出，
+  // 一旦没有溢出就把按钮删掉（模型详情页实测，Shift 悬停翻译后“Show more”整个消失）。
+  // 这种情况替用户点一下展开，让页面自己露出完整内容。
+  function releaseLineClamp(el) {
+    let node = el;
+    for (let i = 0; i < 4 && node && node !== document.body; i += 1) {
+      const clamp = getComputedStyle(node).webkitLineClamp;
+      if (clamp && clamp !== 'none' && clamp !== '0') {
+        const more = findExpandControl(node);
+        if (!more) node.classList.add('irt-unclamp');
+        else if (more.getAttribute('aria-expanded') === 'false') more.click();
+      }
+      node = node.parentElement;
+    }
+  }
+
+  function findExpandControl(node) {
+    const scope = node.parentElement?.parentElement || node.parentElement;
+    if (!scope || scope === document.body || scope === document.documentElement) return null;
+    return [...scope.querySelectorAll('button[aria-expanded]')]
+      .find((b) => /\b(show|read|view)\s+more\b|展开|更多/i.test(b.textContent || '')) || null;
+  }
+
+  // 仅译文模式藏原文：把裸露的文本节点包进一个隐藏 span。
+  // 不能用 font-size: 0 压原文 —— 页面里 em / ch / ex 这些相对单位会跟着塌掉：
+  // atomicagent.io 的标题是 max-width: 14ch，字号一压成 0，宽度就成了 0，译文被挤成一字一行。
+  function hideOrigin(el) {
+    el.setAttribute('data-irt-hide-origin', '');
+    for (const node of [...el.childNodes]) {
+      if (node.nodeType !== 3 || !node.nodeValue) continue;
+      const span = document.createElement('span');
+      span.setAttribute(HIDDEN_TEXT_ATTR, '');
+      span.setAttribute('data-irt-ignore', '');
+      node.replaceWith(span);
+      span.appendChild(node);
+    }
+  }
+
+  // 还原：把包起来的文本节点放回去，并合并回原来的文本节点
+  function showOrigin(el) {
+    el.removeAttribute('data-irt-hide-origin');
+    const wraps = el.querySelectorAll(`:scope > [${HIDDEN_TEXT_ATTR}]`);
+    if (!wraps.length) return;
+    for (const span of wraps) span.replaceWith(...span.childNodes);
+    el.normalize();
+  }
+
+  // 译文没了就把截断还给页面；同一个容器里还有别的译文时保留，免得它们被裁掉
+  function restoreLineClamp(el) {
+    let node = el;
+    for (let i = 0; i < 4 && node && node !== document.body; i += 1) {
+      if (node.classList.contains('irt-unclamp') && !node.querySelector(`.${MARK}`)) node.classList.remove('irt-unclamp');
+      node = node.parentElement;
+    }
+  }
+
+  // 译文与原文（去掉 <bN> 占位、还原转义、忽略大小写与空白）完全相同
+  function sameAsSource(el, translated) {
+    const norm = (s) => unescapeHtml(String(s || '').replace(/<\/?b\d+>/g, '')).replace(/\s+/g, ' ').trim().toLowerCase();
+    const src = norm(el.__irtSourceHtml);
+    return src !== '' && src === norm(translated);
   }
 
   // ---------- 译文的悬停操作条 ----------
@@ -582,6 +717,7 @@
   // 重译必须绕过缓存，否则拿回来的还是同一份旧译文
   async function retranslate(el) {
     const src = el.__irtSourceHtml;
+    const mySession = session;
     if (!src) return;
     const trans = el.querySelector(`:scope > .${MARK}:not(.irt-retry)`);
     if (!trans) return;
@@ -593,6 +729,7 @@
         docTitle: document.title, context: neighborTexts(el), noCache: true,
       });
       if (!res.ok) throw new Error(res.error);
+      if (mySession !== session || !el.isConnected) return;   // 重译期间被还原了，别再写回页面
       removeTranslationOf(el);
       renderTranslation(el, res.data[0], el.__irtHolders || []);
     } catch (e) {
@@ -689,7 +826,11 @@
     if (el.hasAttribute(UNIT_ATTR)) return;
     el.setAttribute(UNIT_ATTR, '1');
     const { html, holders } = serializeUnit(el);
-    if (!shouldTranslateText(html.replace(/<\/?b\d+>/g, ''))) {
+    // 噪音过滤统一放在这里。整页扫描那条路已经在 collectUnits 里筛过一遍，
+    // 但悬停翻译、以及「节点被复用、内容变了」后的重新入队不经过 collectUnits，
+    // 以前这两条路会把品牌名、型号也送去翻译（实测 TurboQuant → 涡轮定量）。
+    const plain = html.replace(/<\/?b\d+>/g, '');
+    if (!shouldTranslateText(plain) || looksLikeIdentifier(plain) || isTinyLabel(el, plain) || isPageChrome(el)) {
       el.setAttribute(STATE_ATTR, 'skip');
       return;
     }
@@ -697,56 +838,81 @@
     el.__irtSourceHtml = html;   // 单段重译要用它重新发请求
     el.setAttribute(STATE_ATTR, 'pending');
     el.classList.add('irt-pending');
-    queue.push({ el, html });
+    queue.push({ el, html, session });
     scheduleFlush();
   }
 
   function scheduleFlush() {
     if (flushTimer) return;
-    flushTimer = setTimeout(flush, 120);
+    // 已经够一批就马上发。不满一批时只留一帧，把同一次扫描里后入队的段落并进去。
+    // 以前固定 120ms，而且每批结束后再等 120ms，首屏白白多出好几拍。
+    const delay = queue.length >= BATCH_SIZE ? 0 : 16;
+    flushTimer = setTimeout(flush, delay);
   }
 
-  const MAX_PARALLEL = 3;
+  const MAX_PARALLEL = 4;
   const BATCH_SIZE = 12;
 
-  async function flush() {
+  function flush() {
     flushTimer = null;
     if (!queue.length) return updateBall();
-    if (inflight >= MAX_PARALLEL) { scheduleFlush(); return; }
-
-    const batch = queue.splice(0, BATCH_SIZE);
-    inflight++;
+    // 空着的并发位一次补满。旧写法每轮只取一批，下一批要等这一批的请求回来才发，
+    // MAX_PARALLEL 名存实亡，整页翻译实际是串行的。
+    while (queue.length && inflight < MAX_PARALLEL) {
+      // 失败后拆出来的单段带 batchCap=1，不能再并回 12 段一批。
+      const cap = queue[0].batchCap || BATCH_SIZE;
+      const batch = queue.splice(0, cap);
+      inflight++;
+      runBatch(batch);
+    }
     updateBall();
+  }
+
+  async function runBatch(batch) {
     try {
       // 带上标题，让模型知道这篇文章的主题（仅用于判断语境，不会翻译它）
       const res = await send({
         type: 'translate', texts: batch.map((b) => b.html),
         to: config.targetLang, docTitle: document.title,
       });
-      if (!res.ok) throw new Error(res.error);
+      if (!res.ok) throw Object.assign(new Error(res.error), { kind: res.kind });
       batch.forEach((item, i) => {
         item.el.classList.remove('irt-pending');
+        // 请求在飞的时候用户可能已经点了还原：不能再把译文写回页面，
+        // 否则会留下一块没被标记、下次还原也清不掉的译文（实测真会留下）。
+        if (item.session !== session || !item.el.isConnected) return;
         renderTranslation(item.el, res.data[i], item.el.__irtHolders || []);
       });
     } catch (e) {
       const reason = e.message || String(e);
-      batch.forEach((item) => {
-        item.el.classList.remove('irt-pending');
-        // 多标签页同时翻译时被限流很常见，每段先自动重投一次再判失败
-        if (!item.retried && pageTranslated && item.el.isConnected) {
-          item.retried = true;
-          setTimeout(() => {
-            if (pageTranslated && item.el.isConnected) {
-              queue.push(item);
-              scheduleFlush();
-            }
-          }, 1500);
-          return;
-        }
-        markState(item.el, 'error');
-        renderRetry(item.el);
-      });
+      batch.forEach((item) => item.el.classList.remove('irt-pending'));
       toast(t('csFailed', reason), 'error');
+      // 后台把失败分了类（见 engines.js 的 failure）：
+      //   fatal 配置错误，重试没有意义，直接报错
+      //   limited / slow 限流、超时、连不上，整批稍后只重试一次，拆开只会多打一轮请求
+      //   无分类 拆成单段，隔离出有问题的那一段，也避免失败后仍合成一批
+      const kind = e.kind;
+      const alive = batch.filter((item) => item.session === session && item.el.isConnected);
+      if (kind === 'fatal') {
+        alive.forEach((item) => { markState(item.el, 'error'); renderRetry(item.el); });
+      } else if (alive.length > 1 && !kind) {
+        for (const item of alive) item.batchCap = 1;
+        queue.unshift(...alive);
+      } else {
+        const retry = [];
+        for (const item of alive) {
+          if (item.retried) { markState(item.el, 'error'); renderRetry(item.el); }
+          else retry.push(item);
+        }
+        if (retry.length) {
+          for (const item of retry) item.retried = true;
+          setTimeout(() => {
+            if (!pageTranslated) return;
+            for (const item of retry) if (item.el.isConnected) queue.push(item);
+            scheduleFlush();
+          }, kind ? 1500 : 400);
+        }
+      }
     } finally {
       inflight--;
       updateBall();
@@ -781,11 +947,17 @@
 
   function resetUnit(el) {
     removeTranslationOf(el);
+    restoreLineClamp(el);
+    // 计数要跟着退回：节点被虚拟列表复用、内容变了要重来时，
+    // 不退回的话 stats.error 永远留着，悬浮球会一直显示失败徽标。
+    const prev = el.getAttribute(STATE_ATTR);
+    if (prev === 'error') stats.error = Math.max(0, stats.error - 1);
+    if (prev === 'done') stats.done = Math.max(0, stats.done - 1);
     el.removeAttribute(STATE_ATTR);
     // 必须连 UNIT_ATTR 一起去掉：enqueue 开头就是
     // `if (el.hasAttribute(UNIT_ATTR)) return`，留着它重置后根本不会重新入队。
     el.removeAttribute(UNIT_ATTR);
-    el.removeAttribute('data-irt-hide-origin');
+    showOrigin(el);
     el.classList.remove('irt-pending', 'irt-flex-host');
     el.style.removeProperty('--irt-origin-fs');
     if (el.getAttribute('style') === '') el.removeAttribute('style');
@@ -793,9 +965,9 @@
     delete el.__irtSourceHtml;
   }
 
-  function scanAndObserve(root = document.body) {
+  function scanAndObserve(root = document.body, nearOnly = false) {
     if (!root || root.nodeType !== 1) return 0;
-    const units = collectUnits(root);
+    const units = collectUnits(root, nearOnly);
     const io = ensureObserver();
     for (const u of units) {
       if (u.hasAttribute(UNIT_ATTR)) {
@@ -840,24 +1012,52 @@
       timer = setTimeout(flush, 350);
     };
 
+    const nearViewport = (el) => {
+      const rect = el.getBoundingClientRect?.();
+      if (!rect) return false;
+      return rect.bottom > -100 && rect.top < window.innerHeight + 400;
+    };
+    // 变动回调里不量布局：页面一刷新就是几百个节点，逐个 getBoundingClientRect 会反复强制排版。
+    // 先收起来，下一帧去重（祖先已在集合里的不再单独扫）后再一次性处理。
+    const added = new Set();
+    let rafId = null;
+    const processAdded = () => {
+      rafId = null;
+      if (!pageTranslated) { added.clear(); return; }
+      const nodes = [...added];
+      added.clear();
+      const set = new Set(nodes);
+      const covered = (n) => {
+        for (let p = n.parentElement; p; p = p.parentElement) if (set.has(p)) return true;
+        return false;
+      };
+      for (const n of nodes) {
+        if (!n.isConnected || covered(n)) continue;
+        // 已经在视口里的马上翻，虚拟列表的节点撑不过 350ms 的节流；远处的留给节流扫描
+        if (nearViewport(n)) scanAndObserve(n);
+        else pendingRoots.add(n);
+      }
+      if (pendingRoots.size) schedule();
+    };
     mutationObs = new MutationObserver((mutations) => {
       if (!pageTranslated) return;
-      let found = false;
       for (const m of mutations) {
         for (const n of m.addedNodes) {
           if (n.nodeType !== 1) continue;
           if (n.classList?.contains(MARK) || n.closest?.('[data-irt-ignore]')) continue;
-          pendingRoots.add(n);
-          found = true;
+          // 后台标签页不出帧，rAF 不会触发，走原来的节流扫描
+          if (document.visibilityState === 'hidden') pendingRoots.add(n);
+          else added.add(n);
         }
       }
-      if (found) schedule();
+      if (pendingRoots.size) schedule();
+      if (added.size && rafId === null) rafId = requestAnimationFrame(processAdded);
     });
     mutationObs.observe(document.body, { childList: true, subtree: true });
   }
 
   // 新出现的 shadow root 不会被上面那个 observer 看到，滚动/定时扫描时顺手补上
-  const observedRoots = new WeakSet();
+  let observedRoots = new WeakSet();   // 需要整体重置，WeakSet 本身不能 clear
   function observeNewRoots() {
     if (!mutationObs) return;
     for (const root of collectRoots(document)) {
@@ -876,7 +1076,7 @@
         timer = null;
         if (!pageTranslated) return;
         observeNewRoots();
-        scanAndObserve(document.body);
+        scanAndObserve(document.body, true);
       }, 600);
     }, { passive: true, capture: true });
   }
@@ -889,7 +1089,7 @@
       if (!pageTranslated) return;
       if (document.visibilityState === 'hidden') return;   // 标签页在后台时不白跑
       observeNewRoots();
-      scanAndObserve(document.body);
+      scanAndObserve(document.body, true);
     }, 3000);
   }
 
@@ -909,6 +1109,7 @@
 
   function restorePage() {
     pageTranslated = false;
+    session += 1;          // 在途的批次全部作废
     queue.length = 0;
     stats = { done: 0, error: 0 };
     userEdits.clear();
@@ -916,15 +1117,17 @@
     observer = null;
     mutationObs?.disconnect();
     mutationObs = null;
+    observedRoots = new WeakSet();   // 还原后再翻译时，shadow root 要重新登记
     document.documentElement.removeAttribute('data-irt-on');
     // 译文可能插在 shadow root 里，document.querySelectorAll 够不到，要逐根清理
     for (const root of collectRoots(document)) {
       root.querySelectorAll(`.${MARK}`).forEach((n) => n.remove());
+      root.querySelectorAll('.irt-unclamp').forEach((n) => n.classList.remove('irt-unclamp'));
       root.querySelectorAll(`style[${SHADOW_STYLE_ATTR}]`).forEach((n) => n.remove());
       root.querySelectorAll(`[${UNIT_ATTR}]`).forEach((n) => {
         n.removeAttribute(UNIT_ATTR);
         n.removeAttribute(STATE_ATTR);
-        n.removeAttribute('data-irt-hide-origin');
+        showOrigin(n);
         n.classList.remove('irt-pending', 'irt-flex-host');
         n.style.removeProperty('--irt-origin-fs');
         if (n.getAttribute('style') === '') n.removeAttribute('style');
@@ -949,8 +1152,8 @@
       document.documentElement.setAttribute('data-irt-on', config.mode);
       for (const root of collectRoots(document)) {
         root.querySelectorAll(`[${UNIT_ATTR}][${STATE_ATTR}="done"]`).forEach((el) => {
-          if (config.mode === 'translation') el.setAttribute('data-irt-hide-origin', '');
-          else el.removeAttribute('data-irt-hide-origin');
+          if (config.mode === 'translation') hideOrigin(el);
+          else showOrigin(el);
         });
       }
     }
@@ -972,6 +1175,10 @@
       if (e.key === config?.hoverHotkey) hoverKeyDown = false;
     }, true);
     window.addEventListener('blur', () => { hoverKeyDown = false; });
+    // 切走再回来时 keyup 可能收不到，按键状态会一直留着，之后随便划过哪里都触发翻译
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') hoverKeyDown = false;
+    });
 
     document.addEventListener('mouseover', (e) => {
       if (!config?.hoverTranslate) return;
@@ -1132,14 +1339,17 @@
       const text = raw.replace(/\s+$/, '');
       if (!text.trim()) return;
 
-      writeEditable(el, text + ' …' + t('csTranslating'));
+      // 占位文案用来判断「等待期间用户有没有继续改内容」：改过就不要再覆盖他的输入
+      const placeholder = `${text} …${t('csTranslating')}`;
+      writeEditable(el, placeholder);
       try {
         await loadConfig();
         const res = await send({ type: 'translate', texts: [text], to: config.targetLang });
         if (!res.ok) throw new Error(res.error);
+        if (readEditable(el) !== placeholder) return;
         writeEditable(el, res.data[0] || text);
       } catch (err) {
-        writeEditable(el, text);
+        if (readEditable(el) === placeholder) writeEditable(el, text);
         toast(t('csInputFailed', err.message || err), 'error');
       }
     }, true);
@@ -1188,6 +1398,10 @@
     ball.className = 'irt-ball';
     ball.setAttribute('data-irt-ignore', '');
     ball.title = t('csBallTitle');
+    // 键盘与读屏可达：只有鼠标能用的话，纯键盘用户没法在页面上开关翻译
+    ball.setAttribute('role', 'button');
+    ball.setAttribute('tabindex', '0');
+    ball.setAttribute('aria-label', t('csBallTitle'));
     ball.innerHTML = `<span class="irt-ball-text">${t('csBallText')}</span><span class="irt-ball-badge"></span>`;
     document.documentElement.appendChild(ball);
 
@@ -1216,6 +1430,12 @@
     ball.addEventListener('click', (e) => {
       e.stopPropagation();
       if (dragged) return;
+      togglePage();
+    }, true);
+    ball.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      e.stopPropagation();
       togglePage();
     }, true);
   }
@@ -1248,11 +1468,15 @@
       toastEl = document.createElement('div');
       toastEl.className = 'irt-toast';
       toastEl.setAttribute('data-irt-ignore', '');
+      // 读屏要能听到：失败提示、已复制这类反馈不能只在视觉上存在
+      toastEl.setAttribute('role', 'status');
+      toastEl.setAttribute('aria-live', 'polite');
       document.documentElement.appendChild(toastEl);
     }
     // 同一条消息还在展示时不重放动画：连续多批失败时不会闪个不停
     if (toastEl.textContent === msg && toastEl.classList.contains('irt-toast-show')) return;
     toastEl.textContent = msg;
+    toastEl.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
     toastEl.className = `irt-toast irt-toast-${kind} irt-toast-show`;
     clearTimeout(toastTimer);
     // 错误信息更长，给它更多阅读时间
