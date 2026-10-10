@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>双译 · 常见问题</title>
+<meta name="description" content="双译（Shuangyi）浏览器翻译扩展的常见问题：安装、更新、翻译服务配置、PDF、隐私与反馈。" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<main>
+  <nav class="nav">
+    <a href="./">首页</a>
+    <a href="faq.html">常见问题</a>
+    <a href="privacy.html">隐私政策</a>
+    <a href="https://github.com/istoo/shuangyi-translate">源码</a>
+    <a href="https://github.com/istoo/shuangyi-translate/releases">下载</a>
+  </nav>
+
+  <h1>常见问题</h1>
+
+  <h2>安装</h2>
+
+  <h3>怎么装？</h3>
+  <p>到 <a href="https://github.com/istoo/shuangyi-translate/releases">Releases</a> 下载最新的 <code>shuangyi-translate-&lt;版本&gt;.zip</code>，解压到一个固定目录，然后在 <code>chrome://extensions</code> 打开开发者模式，点「加载已解压的扩展程序」，选择解压出来的文件夹。商店版本通过后首页会补上链接。</p>
+
+  <h3>为什么浏览器每次启动都提示「请停用以开发者模式运行的扩展程序」？</h3>
+  <p>手动加载的扩展都会有这个提示，不影响使用，点掉即可。浏览器的开发者模式关掉后，手动加载的扩展不会加载。</p>
+
+  <h3>怎么更新？</h3>
+  <p>重新下载新版本的 zip，解压覆盖原目录（目录要固定，不能删或移动），再到扩展管理页点刷新按钮。设置和缓存都在浏览器本地，不会因为覆盖而丢失。</p>
+
+  <h3>装了以后页面没变化？</h3>
+  <p>先看页面右下角有没有蓝色悬浮球。有悬浮球说明扩展已加载，按 <code>Alt+A</code> 或点悬浮球就会开始翻译。没有悬浮球，通常是这个站点被设成了「从不翻译」，或者浏览器语言与目标语言相同导致自动跳过。</p>
+
+  <h2>翻译</h2>
+
+  <h3>支持哪些翻译服务？</h3>
+  <p>OpenAI 兼容接口（DeepSeek、Moonshot、OpenRouter、LM Studio、vLLM 等）、Anthropic Claude、Google Gemini、Ollama 本地模型、DeepL、Google 免费翻译，以及任意自定义 HTTP 接口。地址与模型名都在设置里自己填，扩展不绑定任何一家，也没有内置中转。</p>
+
+  <h3>不配置能不能用？</h3>
+  <p>能。默认的 Google 免费翻译开箱可用，适合快速试用。它的质量和并发都不稳定，长文与专业内容建议换成自己的模型。</p>
+
+  <h3>为什么有些文字没有翻译？</h3>
+  <p>这些是刻意跳过的：导航栏、页脚、菜单与工具栏里的链接，以及用户名、版本号、时间戳这类标识。整页翻译时翻它们只会把页面撑乱。想翻某一段，按住 <code>Shift</code> 悬停到那一段上。</p>
+
+  <h3>译文把页面撑乱了怎么办？</h3>
+  <p>先试「仅译文」模式（<code>Alt+W</code>），它就地替换文字、不新增行，对布局影响最小。设置里把译文样式选成「无修饰」最接近原文观感。如果某个站点仍然明显错乱，欢迎提 issue 并附上地址。</p>
+
+  <h3>只有译文没有原文，或者反过来？</h3>
+  <p><code>Alt+W</code> 在「双语对照」与「仅译文」之间切换，弹窗里也能切。</p>
+
+  <h3>为什么同一页再次打开不用重新翻译？</h3>
+  <p>译文缓存在本地保存，第二次打开直接复用。改了模型、系统提示词或术语库后缓存会自动失效，因为缓存键包含了这些配置的指纹。</p>
+
+  <h3>PDF 支持扫描件吗？</h3>
+  <p>不支持。PDF 阅读页只提取文本层，扫描件里的文字是图片，没有文本层可提。也不做原版式还原，只做段落重建后的双语对照阅读。</p>
+
+  <h3>术语库怎么写？</h3>
+  <p>每行一条 <code>原文=译文</code>，例如 <code>Transformer=变换器</code>。它跟着每套模型档案单独设置，专业内容的术语能保持统一。</p>
+
+  <h2>隐私</h2>
+
+  <h3>数据会被上传到哪里？</h3>
+  <p>扩展本身没有服务器。翻译时，页面里待翻译的文本会发送到<strong>你自己配置的那个接口</strong>，接收方取决于你的配置，扩展不经过任何中转。</p>
+
+  <h3>API Key 存在哪里？</h3>
+  <p>只保存在浏览器本地存储里，只在向你自己填写的那个接口发请求时使用，不会发送到其他地方。设置页里 Key 输入框是密码遮罩的。</p>
+
+  <h3>有数据统计吗？</h3>
+  <p>没有。代码里不含统计或埋点，也不做崩溃上报，可以在<a href="https://github.com/istoo/shuangyi-translate">源码</a>里核对。</p>
+
+  <h2>其他</h2>
+
+  <h3>Edge 能用吗？</h3>
+  <p>能。扩展是标准 MV3，Edge 与 Chrome 共用同一个包。当前需要手动加载，Edge 商店版本准备中。</p>
+
+  <h3>快捷键冲突怎么办？</h3>
+  <p>浏览器不允许扩展改写自己的快捷键，冲突时会被静默忽略。到 <code>chrome://extensions/shortcuts</code> 改绑定，设置页里也有跳转入口。</p>
+
+  <h3>怎么反馈问题？</h3>
+  <p>到 <a href="https://github.com/istoo/shuangyi-translate/issues">GitHub Issues</a> 提交。带上扩展版本、浏览器版本、出问题的页面地址和控制台报错，定位会快很多。贴日志前记得删掉 API Key。</p>
+
+  <footer>
+    <p>双译 · Shuangyi — <a href="https://github.com/istoo/shuangyi-translate">github.com/istoo/shuangyi-translate</a></p>
+  </footer>
+</main>
+</body>
+</html>

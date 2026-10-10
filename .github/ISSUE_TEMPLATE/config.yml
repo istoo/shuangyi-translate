@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: 常见问题
+    url: https://istoo.github.io/shuangyi-translate/faq.html
+    about: 安装与更新、为什么有些文字不翻、PDF 扫描件、数据与 Key 存在哪里
   - name: 使用说明与安装步骤
     url: https://github.com/istoo/shuangyi-translate#readme
     about: 安装、配置模型、支持的接口类型
