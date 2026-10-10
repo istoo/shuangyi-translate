@@ -1571,6 +1571,35 @@
     document.documentElement.style.setProperty('--irt-font-scale', String(config.fontScale));
   }
 
+  // 影响译文内容的设置：目标语言、当前服务档案（档案里带着模型与提示词、术语库）。
+  // 其余设置（译文样式、字号、悬浮球、快捷键……）只影响显示，重译纯属浪费。
+  function translationInputsChanged(before, after) {
+    if (!before || !after) return true;
+    if (before.targetLang !== after.targetLang) return true;
+    const pick = (c) => JSON.stringify([c.engine, c.providers]);
+    return pick(before) !== pick(after);
+  }
+
+  // 不重译，只把新设置套到已经翻好的段落上：译文样式类与原文显隐。
+  function restyleUnits() {
+    document.documentElement.setAttribute('data-irt-on', config.mode);
+    const nextStyle = `irt-style-${config.displayStyle}`;
+    const hide = config.mode === 'translation';
+    for (const root of collectRoots(document)) {
+      for (const node of root.querySelectorAll(`[${UNIT_ATTR}] > .${MARK}`)) {
+        if (node.classList.contains('irt-retry')) continue;   // 重试入口没有译文样式
+        const old = [...node.classList].find((c) => c.startsWith('irt-style-'));
+        if (old === nextStyle) continue;
+        if (old) node.classList.replace(old, nextStyle);
+        else node.classList.add(nextStyle);
+      }
+      for (const el of root.querySelectorAll(`[${UNIT_ATTR}][${STATE_ATTR}="done"]`)) {
+        if (hide) hideOrigin(el);
+        else showOrigin(el);
+      }
+    }
+  }
+
   // ---------- 消息入口 ----------
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     (async () => {
@@ -1608,10 +1637,19 @@
           sendResponse({ ok: true, translated: pageTranslated, host: location.hostname, rule: siteRule(), stats });
           break;
         case 'configChanged': {
-          const wasOn = pageTranslated;
+          const prev = config;          // loadConfig 会换成新对象，先留住上一份做对比
           await loadConfig();
           applyStyleVars();
-          if (wasOn) { restorePage(); translatePage(); }
+          if (siteRule() === 'never') {
+            // 站点被设成「从不翻译」：已经在译文状态就退回原文。
+            // 以前这里无条件重翻一次，于是规则设成 never 之后页面依然是译文。
+            if (pageTranslated) restorePage();
+          } else if (pageTranslated) {
+            // 只有影响译文的设置变了才重译。改样式（虚线/字号）就地更新 ——
+            // 重译会走 restorePage()，顺手把用户手改过的译文一起清掉。
+            if (translationInputsChanged(prev, config)) { restorePage(); translatePage(); }
+            else restyleUnits();
+          }
           // 刚把这个站点设成「总是翻译」时也应该立刻翻，而不是等下次刷新
           else if (siteRule() === 'always' || (config.autoTranslate && !isTargetLangPage())) {
             translatePage();
