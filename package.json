@@ -12,9 +12,12 @@
     "test:e2e:walkthrough": "node test/e2e/walkthrough.mjs"
   },
   "devDependencies": {
-    "jsdom": "^24.0.0",
-    "ws": "^8.16.0"
+    "jsdom": "^30.1.2",
+    "ws": "^8.22.0"
   },
   "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=22.22.2"
+  },
   "author": "徐超"
 }
