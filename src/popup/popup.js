@@ -63,7 +63,8 @@ function paintSeg(segId, attr, value) {
 
 // 模板里引用了 {{apiKey}} 却没填，基本可以断定是配置没做完
 function needsApiKey(provider) {
-  if (!provider || provider.apiKey) return false;
+  // 只填了空白等于没填：粘贴时带进来的空格不能当成「已配置」
+  if (!provider || String(provider.apiKey || '').trim()) return false;
   const filled = fillProvider(provider);
   return /\{\{\s*apiKey\s*\}\}/.test((filled.urlTemplate || '') + (filled.headersTemplate || ''));
 }

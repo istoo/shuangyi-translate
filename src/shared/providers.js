@@ -167,11 +167,21 @@ export function makeProvider(type, overrides = {}) {
 export function fillProvider(provider) {
   const preset = TEMPLATE_PRESETS[provider?.type] || {};
   const out = { type: 'google', ...provider };
+  // 从剪贴板粘来的密钥、地址、模型名常夹带空格与换行，拼进请求里就是错的东西：
+  //   Authorization: Bearer {{apiKey}}  ← apiKey 前面多一个空格，就成了 "Bearer  sk-…"，
+  //   服务端按无效密钥处理（DashScope / OpenAI 都会回 401 Incorrect API key provided）。
+  //   地址两侧的空格会被 URL 编码成 %20，请求打到不存在的路径上。
+  for (const key of ['url', 'apiKey', 'model']) {
+    if (typeof out[key] === 'string') out[key] = out[key].trim();
+  }
   for (const key of ['method', 'urlTemplate', 'headersTemplate', 'bodyTemplate', 'responsePath']) {
     if (!out[key]) out[key] = preset[key] || '';
   }
   if (!out.method) out.method = 'POST';
   if (!out.url) out.url = preset.defaultUrl || '';
+  // 地址填到版本号为止就够了，用户多打一个结尾斜杠会拼出 .../v1//chat/completions。
+  // 这种双斜杠 DashScope 之类网关不会自动纠正，直接 404。
+  if (/\{\{\s*url\s*\}\}\s*\//.test(out.urlTemplate)) out.url = out.url.replace(/\/+$/, '');
   return out;
 }
 

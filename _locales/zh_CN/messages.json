@@ -608,6 +608,12 @@
   "errHttp": {
     "message": "「{0}」返回 HTTP {1}：{2}"
   },
+  "errHintAuth": {
+    "message": "请检查「API Key」：是否填了当前服务的密钥、是否已开通对应模型。从剪贴板粘贴时常会带上空格或换行，本扩展已自动去掉首尾空白，但密钥中间不能有空格。"
+  },
+  "errHintNotFound": {
+    "message": "请检查「Base URL」：多数服务要填到版本号为止，例如 https://api.deepseek.com/v1，结尾不要带斜杠。"
+  },
   "errNotJson": {
     "message": "「{0}」返回的不是 JSON：{1}"
   },

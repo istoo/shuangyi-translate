@@ -60,6 +60,27 @@ function httpKind(status) {
   if (status >= 400 && status < 500 && status !== 408 && status !== 425) return 'fatal';
   return undefined;
 }
+
+// 失败响应体常常是一整坨 JSON（DashScope 的 401 有 200 多字符），直接甩给用户没法看。
+// 能解析出 error.message 之类的可读字段就取它，否则原样截断。
+function httpDetail(raw) {
+  const text = String(raw || '').trim();
+  try {
+    const data = JSON.parse(text);
+    const message = data?.error?.message || data?.error?.msg || data?.message
+      || (typeof data?.error === 'string' ? data.error : '');
+    if (message.trim()) return message.trim().slice(0, 200);
+  } catch { /* 不是 JSON，按原文截断 */ }
+  return text.slice(0, 200);
+}
+
+// 401/403 几乎都是密钥问题，404 几乎都是地址问题。把结论直接写出来，
+// 省得用户对着一坨 JSON 猜是哪一项没填对。
+function httpHint(status) {
+  if (status === 401 || status === 403) return t('errHintAuth');
+  if (status === 404) return t('errHintNotFound');
+  return '';
+}
 // 一批译文再慢也该在这个时间内回来。挂住的请求会占着并发位，整页停在那里。
 const REQUEST_TIMEOUT_MS = 45000;
 
@@ -221,7 +242,11 @@ async function templatedTranslate(texts, { from, to, provider, docTitle, context
     if (!next) break;
     body = next;
   }
-  if (!res.ok) throw failure(t('errHttp', provider.name, res.status, raw.slice(0, 200)), httpKind(res.status));
+  if (!res.ok) {
+    const hint = httpHint(res.status);
+    throw failure(t('errHttp', provider.name, res.status, httpDetail(raw)) + (hint ? `\n${hint}` : ''),
+      httpKind(res.status));
+  }
 
   let data;
   try {
