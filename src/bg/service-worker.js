@@ -14,18 +14,21 @@ async function handleTranslate({ texts, from, to, provider: draft, docTitle, con
   const config = await getConfig();
   const target = to || config.targetLang;
   const provider = draft || resolveProvider(config);
-  const prefix = `${provider.id}#${fingerprint(provider)}|${target}|`;
+  // 系统提示词里会带上页面标题（帮模型建立主题认知），所以同一句话在不同页面上的
+  // 译文本来就可能不一样。标题必须进缓存 key，否则上一篇文章的译文会被搬到这一篇上。
+  const prefix = `${provider.id}#${fingerprint(provider)}|${target}|${fingerprint(docTitle || '')}|`;
   const result = new Array(texts.length);
   const missIdx = [];
   const missTexts = [];
 
-  texts.forEach((t, i) => {
+  // 参数名不要叫 t：上面的 i18n t() 是同一个作用域里的函数，命名撞上很容易埋雷
+  texts.forEach((text, i) => {
     // 单段重译要求绕过缓存，否则只会拿到一份一模一样的旧译文
-    const hit = noCache ? undefined : cacheGet(prefix + t);
+    const hit = noCache ? undefined : cacheGet(prefix + text);
     if (hit !== undefined) result[i] = hit;
     else {
       missIdx.push(i);
-      missTexts.push(t);
+      missTexts.push(text);
     }
   });
 

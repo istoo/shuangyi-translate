@@ -147,6 +147,20 @@ await check('重复文本命中缓存，不再打上游', async () => {
   assert.equal(upstreamCalls, before, '完全相同的请求应当直接命中缓存');
 });
 
+await check('页面标题不同时不复用上一篇文章的译文', async () => {
+  // 系统提示词里带着页面标题，同一句话在两篇文章里的译文本来就可能不同，
+  // 所以标题必须参与缓存 key（否则第一篇的译文会被搬到第二篇上）。
+  const before = upstreamCalls;
+  const first = await send({ type: 'translate', texts: ['cached-once'], to: 'zh-CN', docTitle: '第一篇' });
+  assert.equal(upstreamCalls, before + 1, '第一次要真的打上游');
+  const other = await send({ type: 'translate', texts: ['cached-once'], to: 'zh-CN', docTitle: '第二篇' });
+  assert.equal(upstreamCalls, before + 2, '标题不同应当重新请求');
+  assert.notEqual(other.data[0], first.data[0]);
+  const again = await send({ type: 'translate', texts: ['cached-once'], to: 'zh-CN', docTitle: '第二篇' });
+  assert.equal(upstreamCalls, before + 2, '同一标题第二次应当命中缓存');
+  assert.equal(again.data[0], other.data[0]);
+});
+
 await check('Service Worker 重启后仍命中本地缓存', async () => {
   const { reloadFromDisk, cacheIdle } = await import(`${ROOT}src/bg/translation-cache.js`);
   await cacheIdle();
