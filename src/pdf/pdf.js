@@ -248,11 +248,11 @@ $('drop').addEventListener('drop', (e) => {
   $('drop').classList.remove('over');
   const file = [...(e.dataTransfer?.files || [])].find((f) => /pdf$/i.test(f.name) || f.type === 'application/pdf');
   if (file) loadPdf(file);
-  else setStatus(t('pdfParseFailed', 'not a pdf'), true);
+  else setStatus(t('pdfDropNotPdf'), true);
 });
 
 (async () => {
   const res = await send({ type: 'getConfig' });
   if (res.ok) config = res.data;
-  if (!config) setStatus(t('pdfParseFailed', 'config'), true);
+  if (!config) setStatus(t('pdfNoConfig'), true);
 })();

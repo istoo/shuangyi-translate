@@ -413,6 +413,12 @@
   "pdfParseFailed": {
     "message": "解析失败：{0}"
   },
+  "pdfDropNotPdf": {
+    "message": "请拖入 PDF 文件：这个文件不是 PDF"
+  },
+  "pdfNoConfig": {
+    "message": "读不到扩展配置：请重新加载扩展后再试"
+  },
   "pdfNoText": {
     "message": "这个 PDF 里没有可提取的文字（可能是扫描件）。"
   },

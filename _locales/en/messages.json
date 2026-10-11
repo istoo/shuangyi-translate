@@ -413,6 +413,12 @@
   "pdfParseFailed": {
     "message": "Couldn't parse the file: {0}"
   },
+  "pdfDropNotPdf": {
+    "message": "Please drop a PDF file — this one is not a PDF"
+  },
+  "pdfNoConfig": {
+    "message": "Couldn't read the extension settings — reload the extension and try again"
+  },
   "pdfNoText": {
     "message": "No extractable text in this PDF (it may be a scan)."
   },
