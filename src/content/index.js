@@ -99,7 +99,16 @@
   let session = 0;
   let stats = { done: 0, error: 0 };
   // 用户自己改过的译文（key 是原文 html）。重译时会让位给新译文。
+  // 跨「还原 → 再翻译」保留：手改是用户自己花的功夫，关掉翻译再打开不该丢。
+  // 单段重译是另一回事，那条路会显式删掉这一项（见 retranslateUnit）。
   const userEdits = new Map();
+  const USER_EDITS_MAX = 300;        // 长页面翻多了不至于无限涨
+
+  function rememberUserEdit(src, text) {
+    userEdits.delete(src);           // 重新插入，淘汰时先丢最早改的那条
+    userEdits.set(src, text);
+    while (userEdits.size > USER_EDITS_MAX) userEdits.delete(userEdits.keys().next().value);
+  }
 
   // ---------- i18n ----------
   // 内容脚本不是 module，不能 import，这里内联一份与 shared/i18n.js 等价的实现。
@@ -766,7 +775,7 @@
       if (!save || !edited) {
         trans.innerHTML = snapshot;        // 放弃修改：连内联标签一起恢复
       } else {
-        userEdits.set(el.__irtSourceHtml || '', edited);
+        rememberUserEdit(el.__irtSourceHtml || '', edited);
         trans.textContent = edited;
       }
       if (actions) trans.appendChild(actions);   // 无论保存与否都把操作条放回去
@@ -1112,7 +1121,8 @@
     session += 1;          // 在途的批次全部作废
     queue.length = 0;
     stats = { done: 0, error: 0 };
-    userEdits.clear();
+    // 不清 userEdits：还原只是把译文从页面上撤掉，用户手改过的内容要留着，
+    // 再打开翻译时 renderTranslation 会重新用它（否则改一次样式再翻译就白改了）。
     observer?.disconnect();
     observer = null;
     mutationObs?.disconnect();

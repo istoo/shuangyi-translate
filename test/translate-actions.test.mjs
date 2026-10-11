@@ -164,5 +164,29 @@ console.log('\n=== 常规翻译不受影响 ===');
   check('常规整页翻译不带 context', sent.every((m) => m.context === undefined));
 }
 
+// ---------- 还原再翻译，手改的译文要还在 ----------
+// 手改是用户自己花的功夫，关掉翻译再打开不该丢。以前 restorePage() 会 clear 掉 userEdits。
+console.log('\n=== 还原后再翻译保留手改 ===');
+{
+  await send({ type: 'translatePage' });
+  await sleep(300);
+  const trans = doc.querySelector('#p2 > .irt-translation');
+  click(trans.querySelector('.irt-act-edit'));
+  await sleep(60);
+  const textNode = [...trans.childNodes].find((n) => n.nodeType === 3 && n.nodeValue.trim());
+  textNode.nodeValue = '还原后也要留住的手改译文';
+  trans.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await sleep(120);
+  check('先确认改动已保存', transOf('p2').includes('还原后也要留住的手改译文'), transOf('p2'));
+
+  await send({ type: 'togglePage' });           // 关掉翻译
+  await sleep(150);
+  check('关掉翻译后页面上没有译文', !doc.querySelector('.irt-translation'));
+
+  await send({ type: 'togglePage' });           // 再打开
+  await sleep(400);
+  check('重新翻译后手改的译文还在', transOf('p2').includes('还原后也要留住的手改译文'), transOf('p2'));
+}
+
 console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);
 process.exit(fail ? 1 : 0);
