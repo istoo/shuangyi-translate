@@ -52,6 +52,14 @@
   const PREFETCH_BEHIND = 15;  // 往前留一点，便于回拖
   const BATCH = 20;            // 单次批量翻译的条数
   const TICK_MS = 2500;        // 预取轮询间隔
+  const CACHE_MAX = 500;       // 单个视频最多记住多少条字幕译文（一部电影的条数级）
+
+  // 字幕缓存要封顶：长视频看完能攒下几千条，白占内存
+  function remember(state, src, out) {
+    state.cache.delete(src);
+    state.cache.set(src, out);
+    while (state.cache.size > CACHE_MAX) state.cache.delete(state.cache.keys().next().value);
+  }
 
   const controllers = new Set();
   let resizeObs = null;   // 尺寸变化要挨个观察，新增的视频补登记，销毁的注销
@@ -237,7 +245,7 @@
       state.inflight.delete(text);
       if (!res.ok) return;
       const out = res.data[0] || '';
-      state.cache.set(text, out);
+      remember(state, text, out);
       // 还停在这一句就立刻刷新译文
       if (state.current === text) renderTrans(state, out);
     } catch {
@@ -266,7 +274,7 @@
     const res = await send({ type: 'translate', texts: batch, to: config.targetLang });
     batch.forEach((x) => state.inflight.delete(x));
     if (!res.ok) return;
-    batch.forEach((src, i) => state.cache.set(src, res.data[i] || ''));
+    batch.forEach((src, i) => remember(state, src, res.data[i] || ''));
 
     const cur = state.cache.get(state.current);
     if (cur !== undefined && state.layer) renderTrans(state, cur);

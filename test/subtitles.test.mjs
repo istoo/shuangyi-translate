@@ -246,5 +246,16 @@ console.log('\n=== 控制器销毁时要摘掉监听器 ===');
   check('重新开启后重新挂上监听', track.listenerCount('cuechange') === 1, String(track.listenerCount('cuechange')));
 }
 
+// 字幕缓存要封顶，否则看完一部两小时的片子会攒下几千条译文白占内存。
+// 缓存藏在模块内部，这里退一步做源码级检查：有上限常量，且写入都走封顶的 remember()。
+console.log('\n=== 字幕缓存封顶 ===');
+{
+  const src = readFileSync('src/content/subtitles.js', 'utf8');
+  const withoutHelper = src.replace(/function remember\(state, src, out\) \{[\s\S]*?\n  \}/, '');
+  check('有缓存上限常量', /const CACHE_MAX = \d+;/.test(src));
+  check('译文都写进封顶的 remember()', /remember\(state, /.test(src)
+    && !/state\.cache\.set\(/.test(withoutHelper));
+}
+
 console.log(`\n=== 汇总 ===\n通过 ${pass} / 失败 ${fail}`);
 process.exit(fail ? 1 : 0);
