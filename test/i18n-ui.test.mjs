@@ -3,10 +3,11 @@
 // 加载 en 语言包渲染真实页面，验证语言包真的接得上、且不会漏翻。
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { makeI18n } from './helpers/i18n.mjs';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const { DEFAULTS } = await import(`${ROOT}src/shared/config.js`);
 
 const html = readFileSync(`${ROOT}src/options/options.html`, 'utf8');

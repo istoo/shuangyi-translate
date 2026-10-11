@@ -4,11 +4,12 @@
 // 用法：先启动带调试端口的 Chrome 并加载扩展，再 node test/e2e/screenshot.mjs <port>
 import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { connect, sleep } from './cdp.mjs';
 import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9338';
-const OUT = new URL('../../store/screenshots/', import.meta.url).pathname;
+const OUT = fileURLToPath(new URL('../../store/screenshots/', import.meta.url));
 mkdirSync(OUT, { recursive: true });
 
 const ARTICLE = `<!doctype html><html lang="en"><head><title>How Retrieval Augmented Generation Works</title>

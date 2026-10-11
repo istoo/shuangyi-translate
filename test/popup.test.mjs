@@ -2,10 +2,11 @@
 // 弹窗是用户最常用的入口，这里坏了整个扩展就没法用。
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { makeI18n } from './helpers/i18n.mjs';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const { DEFAULTS } = await import(`${ROOT}src/shared/config.js`);
 
 const html = readFileSync(`${ROOT}src/popup/popup.html`, 'utf8');

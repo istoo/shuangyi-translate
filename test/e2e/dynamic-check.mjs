@@ -6,11 +6,12 @@
 //
 // 用法：先启动带调试端口的 Chrome，再 node test/e2e/dynamic-check.mjs <port>
 import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { connect, sleep } from './cdp.mjs';
 import { setTestConfig, clearSiteRules } from './state.mjs';
 
 const PORT = process.argv[2] || '9363';
-const EXT = new URL('../../', import.meta.url).pathname;
+const EXT = fileURLToPath(new URL('../../', import.meta.url));
 
 // 页面同时做三件事：
 //  1) 每 80ms 往一个隐藏容器里增删节点，模拟 React 应用的持续 DOM 变动

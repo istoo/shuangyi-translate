@@ -4,11 +4,12 @@
 //
 // 用法：先启动带调试端口的 Chrome，再 node test/e2e/walkthrough.mjs <port>
 import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { connect, sleep } from './cdp.mjs';
 import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9357';
-const EXT = new URL('../../', import.meta.url).pathname;
+const EXT = fileURLToPath(new URL('../../', import.meta.url));
 
 const PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Walkthrough Page</title>
 <style>body{margin:0;font:16px/1.7 Georgia,serif;padding:40px 60px;max-width:900px}

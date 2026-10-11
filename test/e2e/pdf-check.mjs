@@ -4,11 +4,12 @@
 // 用法：先启动带调试端口的 Chrome，再 node test/e2e/pdf-check.mjs <port>
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { connect, sleep } from './cdp.mjs';
 import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9355';
-const EXT = new URL('../../', import.meta.url).pathname;
+const EXT = fileURLToPath(new URL('../../', import.meta.url));
 const TMP = '/tmp/shuangyi-pdf-test';
 
 rmSync(TMP, { recursive: true, force: true });

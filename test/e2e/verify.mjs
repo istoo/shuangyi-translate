@@ -8,13 +8,14 @@
 //     --remote-debugging-port=9336 --user-data-dir=/tmp/irt-v about:blank &
 //   node test/e2e/verify.mjs 9336
 import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { connect, sleep } from './cdp.mjs';
 import { setTestConfig } from './state.mjs';
 import { DEFAULTS } from '../../src/shared/config.js';
 
 const PORT = process.argv[2] || '9336';
 // 也可以指向解压后的发布包，用来验证打包产物本身是否完整可用
-const EXT_PATH = process.argv[3] || new URL('../../', import.meta.url).pathname;
+const EXT_PATH = process.argv[3] || fileURLToPath(new URL('../../', import.meta.url));
 
 let upstreamHits = 0;
 const page = (title, body) => `<!doctype html><html lang="en"><head><title>${title}</title></head><body>${body}</body></html>`;

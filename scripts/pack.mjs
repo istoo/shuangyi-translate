@@ -3,8 +3,9 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 const version = manifest.version;
 const base = `shuangyi-translate-${version}`;

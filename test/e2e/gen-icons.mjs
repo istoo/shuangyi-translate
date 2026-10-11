@@ -8,10 +8,11 @@
 //
 // 用法：先启动带调试端口的 Chrome，再 node test/e2e/gen-icons.mjs <port>
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { connect, sleep } from './cdp.mjs';
 
 const PORT = process.argv[2] || '9361';
-const OUT = new URL('../../icons/', import.meta.url).pathname;
+const OUT = fileURLToPath(new URL('../../icons/', import.meta.url));
 mkdirSync(OUT, { recursive: true });
 
 const SIZES = [16, 32, 48, 128];

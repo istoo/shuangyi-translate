@@ -4,8 +4,9 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 
 let pass = 0;
@@ -82,6 +83,15 @@ check('打包清单覆盖扩展运行需要的文件', () => {
     assert.ok(existsSync(join(ROOT, `_locales/${manifest.default_locale}/messages.json`)),
       `默认语言包 _locales/${manifest.default_locale}/messages.json 不存在`);
   }
+});
+
+check('脚本用 fileURLToPath 取路径，而不是 URL.pathname', () => {
+  // URL.pathname 会把空格转义成 %20，代码放在含空格的目录里就会找不到文件。
+  // 开发者机器上的路径五花八门，这种坑只会在别人 clone 之后才炸出来。
+  const files = [...walk(join(ROOT, 'scripts')), ...walk(join(ROOT, 'test'))]
+    .filter((f) => f.endsWith('.mjs'));
+  const bad = files.filter((f) => /import\.meta\.url\)\.pathname/.test(readFileSync(f, 'utf8')));
+  assert.deepEqual(bad.map((f) => relative(ROOT, f)), [], '这些文件还在用 URL.pathname 取路径');
 });
 
 check('HTML 里的 id 与脚本用到的 id 对得上', () => {

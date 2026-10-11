@@ -3,11 +3,12 @@
 // 用法：先启动带调试端口的 Chrome，再 node test/e2e/export-check.mjs <port>
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { connect, sleep } from './cdp.mjs';
 import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9353';
-const EXT = new URL('../../', import.meta.url).pathname;
+const EXT = fileURLToPath(new URL('../../', import.meta.url));
 const DOWNLOADS = '/tmp/shuangyi-export-test';
 
 rmSync(DOWNLOADS, { recursive: true, force: true });

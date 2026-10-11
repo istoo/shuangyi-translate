@@ -4,11 +4,12 @@
 // 用法：先启动带调试端口的 Chrome，再 node test/e2e/subtitle-check.mjs <port>
 import { createServer } from 'node:http';
 import { writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { connect, sleep } from './cdp.mjs';
 import { setTestConfig } from './state.mjs';
 
 const PORT = process.argv[2] || '9352';
-const EXT = new URL('../../', import.meta.url).pathname;
+const EXT = fileURLToPath(new URL('../../', import.meta.url));
 
 const VTT = `WEBVTT
 

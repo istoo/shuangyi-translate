@@ -2,9 +2,10 @@
 // 覆盖模块链路能否加载、消息路由、译文缓存，以及新加的「配置指纹」缓存失效逻辑。
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { makeI18n } from './helpers/i18n.mjs';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const { DEFAULTS } = await import(`${ROOT}src/shared/config.js`);
 
 // ---- mock chrome ----
