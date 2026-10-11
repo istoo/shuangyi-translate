@@ -118,6 +118,23 @@ check('可以保留页码（dropPageNumbers: false）', () => {
   assert.deepEqual(textOf(paras), ['12']);
 });
 
+check('页首的页码同样被丢弃', () => {
+  const paras = buildParagraphs([
+    item('7', 300, 780),
+    item('Real content of the page.', 50, 700),
+  ]);
+  assert.deepEqual(textOf(paras), ['Real content of the page.']);
+});
+
+check('正文中间的独立数字（年份、编号）不能被当页码丢掉', () => {
+  const paras = buildParagraphs([
+    item('Table 1 lists the results.', 50, 700),
+    item('2024', 50, 660),
+    item('The trend continued afterwards.', 50, 620),
+  ]);
+  assert.deepEqual(textOf(paras), ['Table 1 lists the results.', '2024', 'The trend continued afterwards.']);
+});
+
 check('空输入与脏数据不会抛错', () => {
   assert.deepEqual(buildParagraphs([]), []);
   assert.deepEqual(buildParagraphs(null), []);

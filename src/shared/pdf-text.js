@@ -84,9 +84,15 @@ export function buildParagraphs(items, options = {}) {
     prevRow = row;
   }
 
+  // 页码只在页首/页尾丢。正文中间的独立数字（年份、编号、金额）是内容，
+  // 光看「整段就是一个数字」会把 2024 这类段落整个丢掉。
   return out
     .map((p) => ({ text: p.text.replace(/\s+/g, ' ').trim(), isHeading: !!p.isHeading }))
-    .filter((p) => p.text && !(dropPageNumbers && PAGE_NUMBER.test(p.text)));
+    .filter((p, i, list) => {
+      if (!p.text) return false;
+      const edge = i === 0 || i === list.length - 1;
+      return !(dropPageNumbers && edge && !p.isHeading && PAGE_NUMBER.test(p.text));
+    });
 }
 
 function joinParts(parts) {
