@@ -12,7 +12,7 @@
     "test:e2e:walkthrough": "node test/e2e/walkthrough.mjs"
   },
   "devDependencies": {
-    "jsdom": "^30.1.2",
+    "jsdom": "^30.1.3",
     "ws": "^8.22.0"
   },
   "license": "AGPL-3.0-only",
